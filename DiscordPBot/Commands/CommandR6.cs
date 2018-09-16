@@ -144,31 +144,66 @@ namespace DiscordPBot.Commands
                 .WithColor(PDiscordColor.SiegeYellow)
                 .WithThumbnailUrl($"https://ubisoft-avatars.akamaized.net/{ubisoftId}/default_146_146.png")
                 .WithAuthor(
-                    $"{username}'s Stats"
+                    $"{username}'s Stats (Level {playerStats.Progression.Level}/{playerStats.Progression.TotalXp} XP)"
                 )
                 .AddField("Kill/Death",
-                    $"**Kills:** {numKills}\n**Deaths:** {numDeaths}\n**Assists:** {numAssists}\n**K/D:** {kd}", true)
+                    $"**Kills:** {numKills}\n" +
+                    $"**Deaths:** {numDeaths}\n" +
+                    $"**Assists:** {numAssists}\n" +
+                    $"**K/D:** {kd}",
+                    true)
                 .AddField("Win/Loss",
-                    $"**Won:** {numWon} ({winPercent}%)\n**Lost:** {numLost} ({100 - winPercent}%)\n**W/L:** {winLoss}\n**Playtime:** {playtime}",
+                    $"**Won:** {numWon} ({winPercent}%)\n" +
+                    $"**Lost:** {numLost} ({100 - winPercent}%)\n" +
+                    $"**W/L:** {winLoss}\n" +
+                    $"**Playtime:** {playtime}",
                     true)
                 .AddField("Stats",
-                    $"**DBNOs:** {numDbnos}\n**Headshots:** {numHeadshots}\n**Penetrations:** {numPenetrations}\n**Melees:** {numMelees}\n**Revives:** {numRevives}\n**Blind Kills:** {numBlindKills}",
+                    $"**DBNOs:** {numDbnos}\n" +
+                    $"**Headshots:** {numHeadshots}\n" +
+                    $"**Penetrations:** {numPenetrations}\n" +
+                    $"**Melees:** {numMelees}\n" +
+                    $"**Revives:** {numRevives}\n" +
+                    $"**Blind Kills:** {numBlindKills}",
                     true)
-                .AddField("Shots", $"**Fired:** {numShots}\n**Hit:** {numHit}\n**Accuracy:** {shotHitAccuracy}%", true)
+                .AddField("Shots",
+                    $"**Fired:** {numShots}\n" +
+                    $"**Hit:** {numHit}\n" +
+                    $"**Accuracy:** {shotHitAccuracy}%",
+                    true)
                 .AddField("Extras",
-                    $"**Suicides:** {numSuicides}\n**Barricades:** {numBarricades}\n**Reinforcements:** {numReinforcements}\n**Gadgets Destroyed:** {numGadgetDestroyed}\n**Rappel Breaches:** {numRappelBreaches}\n**Disatance Travelled:** {distanceTravelled}",
+                    $"**Suicides:** {numSuicides}\n" +
+                    $"**Barricades:** {numBarricades}\n" +
+                    $"**Reinforcements:** {numReinforcements}\n" +
+                    $"**Gadgets Destroyed:** {numGadgetDestroyed}\n" +
+                    $"**Rappel Breaches:** {numRappelBreaches}\n" +
+                    $"**Disatance Travelled:** {distanceTravelled}",
                     true)
                 .AddField("Bomb",
-                    $"**Wins:** {numBombWins} ({bombWinPercent}%)\n**Losses:** {numBombLosses} ({100 - bombWinPercent}%)\n**Best Score:** {numBombBestScore}",
+                    $"**Wins:** {numBombWins} ({bombWinPercent}%)\n" +
+                    $"**Losses:** {numBombLosses} ({100 - bombWinPercent}%)\n" +
+                    $"**Best Score:** {numBombBestScore}",
                     true)
                 .AddField("Hostage",
-                    $"**Wins:** {numHostageWins} ({hostageWinPercent}%)\n**Losses:** {numHostageLosses} ({100 - hostageWinPercent}%)\n**Best Score:** {numHostageBestScore}\n**Extractions Denied:** {numHostageExtractionsDenied}",
+                    $"**Wins:** {numHostageWins} ({hostageWinPercent}%)\n" +
+                    $"**Losses:** {numHostageLosses} ({100 - hostageWinPercent}%)\n" +
+                    $"**Best Score:** {numHostageBestScore}\n" +
+                    $"**Extractions Denied:** {numHostageExtractionsDenied}",
                     true)
                 .AddField("Secure",
-                    $"**Wins:** {numSecureWins} ({secureWinPercent}%)\n**Losses:** {numSecureLosses} ({100 - secureWinPercent}%)\n**Best Score:** {numSecureBestScore}\n**Obj. Kills (ATK):** {numKillsAsAttackerInObjective}\n**Obj. Kills (DEF):** {numKillsAsDefenderInObjective}\n**Objectives Secured:** {numTimesObjectiveSecured}",
+                    $"**Wins:** {numSecureWins} ({secureWinPercent}%)\n" +
+                    $"**Losses:** {numSecureLosses} ({100 - secureWinPercent}%)\n" +
+                    $"**Best Score:** {numSecureBestScore}\n" +
+                    $"**Obj. Kills (ATK):** {numKillsAsAttackerInObjective}\n" +
+                    $"**Obj. Kills (DEF):** {numKillsAsDefenderInObjective}\n" +
+                    $"**Objectives Secured:** {numTimesObjectiveSecured}",
                     true)
                 .AddField("Quick Rank",
-                    $"**Wins:** {numRankedWon} ({winRankedPercent}%)\n**Losses:** {numRankedLost} ({100 - winRankedPercent}%)\n**W/L:** {rankedWinLoss}\n**K/D:** {rankedKd}\n**Playtime:** {rankedPlaytime}",
+                    $"**Wins:** {numRankedWon} ({winRankedPercent}%)\n" +
+                    $"**Losses:** {numRankedLost} ({100 - winRankedPercent}%)\n" +
+                    $"**W/L:** {rankedWinLoss}\n" +
+                    $"**K/D:** {rankedKd}\n" +
+                    $"**Playtime:** {rankedPlaytime}",
                     true);
 
             await ctx.RespondAsync(embed: embed);
