@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using DiscordPBot.Util;
 using DotNetEnv;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
@@ -14,7 +15,7 @@ using DSharpPlus.Net.WebSocket;
 
 namespace DiscordPBot
 {
-    class PBot
+    internal class PBot
     {
         private static string _discordToken;
         private static DiscordClient _discord;
@@ -52,7 +53,7 @@ namespace DiscordPBot
                 EnableMentionPrefix = true,
                 EnableDms = true
             });
-            _commands.RegisterCommands<PCommands>();
+            _commands.RegisterCommands<Commands.PCommands>();
             _commands.SetHelpFormatter<HelpFormatter>();
 
             _discord.Ready += DiscordOnReady;
@@ -67,6 +68,28 @@ namespace DiscordPBot
 
             Console.WriteLine("End of Line.");
             Console.ReadKey();
+        }
+
+        private static Task DiscordOnClientErrored(ClientErrorEventArgs args)
+        {
+            LogError(args.Exception.ToString());
+
+            return Task.CompletedTask;
+        }
+
+        private static Task DiscordOnReady(ReadyEventArgs args)
+        {
+            _discord.UpdateStatusAsync(new DiscordGame
+            {
+                Name = "github.com/parzivail/PBot"
+            });
+
+            return Task.CompletedTask;
+        }
+
+        private static Task DiscordOnMessageCreated(MessageCreateEventArgs args)
+        {
+            return Task.CompletedTask;
         }
 
         public static void LogDebug(string message)
@@ -92,25 +115,6 @@ namespace DiscordPBot
         public static void LogCritical(string message)
         {
             _discord.DebugLogger.LogMessage(LogLevel.Critical, AppName, message, DateTime.Now);
-        }
-
-        private static Task DiscordOnClientErrored(ClientErrorEventArgs args)
-        {
-            Console.WriteLine(args.Exception.ToString());
-
-            return Task.CompletedTask;
-        }
-
-        private static Task DiscordOnReady(ReadyEventArgs args)
-        {
-            _discord.UpdateStatusAsync(new DiscordGame("github.com/parzivail/PBot"));
-
-            return Task.CompletedTask;
-        }
-
-        private static Task DiscordOnMessageCreated(MessageCreateEventArgs args)
-        {
-            return Task.CompletedTask;
         }
     }
 }

@@ -19,6 +19,6 @@ namespace DiscordPBot.RainbowSix
         [JsonProperty("wins")]
         public int Wins { get; set; }
         [JsonProperty("wl")]
-        public int Wl { get; set; }
+        public float Wl { get; set; }
     }
 }

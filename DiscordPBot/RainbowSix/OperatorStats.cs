@@ -28,7 +28,7 @@ namespace DiscordPBot.RainbowSix
         public int Playtime { get; set; }
         [JsonProperty("abilities")]
         public Ability[] Abilities { get; set; }
-        [JsonProperty("_operator")]
+        [JsonProperty("operator")]
         public Operator Operator { get; set; }
     }
 }
