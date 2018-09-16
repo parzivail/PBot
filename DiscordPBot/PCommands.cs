@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DiscordPBot.Reddit;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.Interactivity;
+using Newtonsoft.Json;
 
 namespace DiscordPBot
 {
@@ -23,7 +26,7 @@ namespace DiscordPBot
             await ctx.RespondAsync($"Ping: {ctx.Client.Ping}ms");
         }
 
-        [Command("doimg"), Description("DEBUG COMMAND")]
+        [Command("doimg"), Description("DEBUG COMMAND"), Hidden]
         public async Task DoImg(CommandContext ctx)
         {
             await ctx.TriggerTypingAsync();
@@ -54,9 +57,55 @@ namespace DiscordPBot
                 await ctx.RespondAsync(":x: Invalid subreddit.");
                 return;
             }
-            else
+
+            subreddit = match.Groups[1].Value;
+
+            var reqUrl = $"https://www.reddit.com/r/{subreddit}/top.json?sort=top&t=year&limit=3";
+            using (var wc = new WebClient())
             {
-                var reqUrl = $"https://www.reddit.com/r/{match.Groups[0].Value}/top.json?sort=top&t=year";
+                RedditJson posts;
+                
+                try
+                {
+                    var json = wc.DownloadString(reqUrl);
+                    posts = JsonConvert.DeserializeObject<RedditJson>(json);
+                }
+                catch (WebException e)
+                {
+                    await ctx.RespondAsync(":interrobang: Could not fetch posts.");
+                    return;
+                }
+                catch (JsonSerializationException)
+                {
+                    await ctx.RespondAsync(":interrobang: Could not load posts.");
+                    return;
+                }
+
+                if (posts.Subreddit.Posts.Length == 0)
+                {
+                    await ctx.RespondAsync(":warning: No posts in subreddit.");
+                    return;
+                }
+
+                var nsfw = posts.Subreddit.Posts[0].PostData.Nsfw;
+
+                var desc =
+                    $"**Here's a sneak peek of [/r/{subreddit}](https://np.reddit.com/r/{subreddit}){(nsfw ? " [NSFW]" : " ")} using the [top posts](https://np.reddit.com/r/{subreddit}/top/?sort=top&t=year) of the year!**\n";
+
+                for (var i = 0; i < posts.Subreddit.Posts.Length; i++)
+                {
+                    var post = posts.Subreddit.Posts[i];
+                    desc +=
+                        $"\\#{i + 1}: [{post.PostData.Title}]({post.PostData.Link}) | [{post.PostData.NumComments} comment{(post.PostData.NumComments == 1 ? "" : "s")}](https://np.reddit.com{post.PostData.CommentsLink})\n";
+                }
+
+                var embed = new DiscordEmbedBuilder
+                {
+                    Color = DiscordColor.Orange,
+                    Description = desc
+                }.Build();
+
+                await ctx.RespondAsync(embed: embed);
             }
         }
     }

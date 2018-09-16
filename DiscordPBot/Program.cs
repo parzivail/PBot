@@ -54,6 +54,7 @@ namespace DiscordPBot
             _commands.SetHelpFormatter<HelpFormatter>();
 
             _discord.Ready += DiscordOnReady;
+            _discord.ClientErrored += DiscordOnClientErrored;
             _discord.MessageCreated += DiscordOnMessageCreated;
 
             await _discord.ConnectAsync();
@@ -62,6 +63,13 @@ namespace DiscordPBot
 
             Console.WriteLine("End of Line.");
             Console.ReadKey();
+        }
+
+        private static Task DiscordOnClientErrored(ClientErrorEventArgs args)
+        {
+            Console.WriteLine(args.Exception.ToString());
+
+            return Task.CompletedTask;
         }
 
         private static Task DiscordOnReady(ReadyEventArgs args)
