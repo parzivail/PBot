@@ -14,12 +14,14 @@ using DSharpPlus.Net.WebSocket;
 
 namespace DiscordPBot
 {
-    class Program
+    class PBot
     {
         private static string _discordToken;
         private static DiscordClient _discord;
         private static InteractivityModule _interactivity;
         private static CommandsNextModule _commands;
+
+        private const string AppName = "PBot";
 
         private static void LoadEnv()
         {
@@ -59,10 +61,37 @@ namespace DiscordPBot
 
             await _discord.ConnectAsync();
 
+            LogInfo("PBot engine running.");
+
             await Task.Delay(-1);
 
             Console.WriteLine("End of Line.");
             Console.ReadKey();
+        }
+
+        public static void LogDebug(string message)
+        {
+            _discord.DebugLogger.LogMessage(LogLevel.Debug, AppName, message, DateTime.Now);
+        }
+
+        public static void LogInfo(string message)
+        {
+            _discord.DebugLogger.LogMessage(LogLevel.Info, AppName, message, DateTime.Now);
+        }
+
+        public static void LogWarn(string message)
+        {
+            _discord.DebugLogger.LogMessage(LogLevel.Warning, AppName, message, DateTime.Now);
+        }
+
+        public static void LogError(string message)
+        {
+            _discord.DebugLogger.LogMessage(LogLevel.Error, AppName, message, DateTime.Now);
+        }
+
+        public static void LogCritical(string message)
+        {
+            _discord.DebugLogger.LogMessage(LogLevel.Critical, AppName, message, DateTime.Now);
         }
 
         private static Task DiscordOnClientErrored(ClientErrorEventArgs args)
