@@ -81,64 +81,19 @@ namespace DiscordPBot.Commands
                 }
             }
 
+            var stats = playerStats.Stats[0];
+
             username = playerStats.Username;
-
             var ubisoftId = playerStats.UbisoftId;
-
-            var numKills = playerStats.Stats[0].General.Kills;
-            var numDeaths = playerStats.Stats[0].General.Deaths;
-            var numAssists = playerStats.Stats[0].General.Assists;
-            var kd = playerStats.Stats[0].General.Kd;
-
-            var numWon = playerStats.Stats[0].General.Wins;
-            var numLost = playerStats.Stats[0].General.Losses;
-            var winLoss = playerStats.Stats[0].General.Wl;
-            var winPercent = (int) (numWon / (float) (numWon + numLost) * 100);
-            var playtime = playerStats.Stats[0].General.Playtime.Seconds().Humanize(maxUnit: TimeUnit.Hour);
-
-            var numDbnos = playerStats.Stats[0].General.Dbnos;
-            var numHeadshots = playerStats.Stats[0].General.Headshots;
-            var numPenetrations = playerStats.Stats[0].General.PenetrationKills;
-            var numMelees = playerStats.Stats[0].General.MeleeKills;
-            var numRevives = playerStats.Stats[0].General.Revives;
-            var numBlindKills = playerStats.Stats[0].General.BlindKills;
-
-            var numShots = playerStats.Stats[0].General.BulletsFired;
-            var numHit = playerStats.Stats[0].General.BulletsHit;
-            var shotHitAccuracy = (int) (numHit / (float) numShots * 100);
-
-            var numSuicides = playerStats.Stats[0].General.Suicides;
-            var numBarricades = playerStats.Stats[0].General.BarricadesDeployed;
-            var numReinforcements = playerStats.Stats[0].General.ReinforcementsDeployed;
-            var numGadgetDestroyed = playerStats.Stats[0].General.GadgetsDestroyed;
-            var numRappelBreaches = playerStats.Stats[0].General.RappelBreaches;
-            var distanceTravelled = $"{playerStats.Stats[0].General.DistanceTravelled:n0}m";
-
-            var numBombWins = playerStats.Stats[0].Gamemode.Bomb.Wins;
-            var numBombLosses = playerStats.Stats[0].Gamemode.Bomb.Losses;
-            var bombWinPercent = (int) (numBombWins / (float) (numBombWins + numBombLosses) * 100);
-            var numBombBestScore = playerStats.Stats[0].Gamemode.Bomb.BestScore;
-
-            var numHostageWins = playerStats.Stats[0].Gamemode.Hostage.Wins;
-            var numHostageLosses = playerStats.Stats[0].Gamemode.Hostage.Losses;
-            var hostageWinPercent = (int) (numHostageWins / (float) (numHostageWins + numHostageLosses) * 100);
-            var numHostageBestScore = playerStats.Stats[0].Gamemode.Hostage.BestScore;
-            var numHostageExtractionsDenied = playerStats.Stats[0].Gamemode.Hostage.ExtractionsDenied;
-
-            var numSecureWins = playerStats.Stats[0].Gamemode.SecureArea.Wins;
-            var numSecureLosses = playerStats.Stats[0].Gamemode.SecureArea.Losses;
-            var secureWinPercent = (int) (numSecureWins / (float) (numSecureWins + numSecureLosses) * 100);
-            var numSecureBestScore = playerStats.Stats[0].Gamemode.SecureArea.BestScore;
-            var numKillsAsAttackerInObjective = playerStats.Stats[0].Gamemode.SecureArea.KillsAsAttackerInObjective;
-            var numKillsAsDefenderInObjective = playerStats.Stats[0].Gamemode.SecureArea.KillsAsDefenderInObjective;
-            var numTimesObjectiveSecured = playerStats.Stats[0].Gamemode.SecureArea.TimesObjectiveSecured;
-
-            var numRankedWon = playerStats.Stats[0].Queue.Ranked.Wins;
-            var numRankedLost = playerStats.Stats[0].Queue.Ranked.Losses;
-            var rankedWinLoss = playerStats.Stats[0].Queue.Ranked.Wl;
-            var rankedKd = playerStats.Stats[0].Queue.Ranked.Kd;
-            var winRankedPercent = (int) (numRankedWon / (float) (numRankedWon + numRankedLost) * 100);
-            var rankedPlaytime = playerStats.Stats[0].Queue.Ranked.Playtime.Seconds().Humanize(maxUnit: TimeUnit.Hour);
+            
+            var winPercent = (int) (stats.General.Wins / (float) (stats.General.Wins + stats.General.Losses) * 100);
+            var playtime = stats.General.Playtime.Seconds().Humanize(maxUnit: TimeUnit.Hour);
+            var shotHitAccuracy = (int) (stats.General.BulletsHit / (float)stats.General.BulletsFired * 100);
+            var bombWinPercent = (int) (stats.Gamemode.Bomb.Wins / (float) (stats.Gamemode.Bomb.Wins + stats.Gamemode.Bomb.Losses) * 100);
+            var hostageWinPercent = (int) (stats.Gamemode.Hostage.Wins / (float) (stats.Gamemode.Hostage.Wins + stats.Gamemode.Hostage.Losses) * 100);
+            var secureWinPercent = (int) (stats.Gamemode.SecureArea.Wins / (float) (stats.Gamemode.SecureArea.Wins + stats.Gamemode.SecureArea.Losses) * 100);
+            var winRankedPercent = (int) (stats.Queue.Ranked.Wins / (float) (stats.Queue.Ranked.Wins + stats.Queue.Ranked.Losses) * 100);
+            var rankedPlaytime = stats.Queue.Ranked.Playtime.Seconds().Humanize(maxUnit: TimeUnit.Hour);
 
             var embed = new DiscordEmbedBuilder()
                 .WithColor(PDiscordColor.SiegeYellow)
@@ -147,63 +102,63 @@ namespace DiscordPBot.Commands
                     $"{username}'s Stats (Level {playerStats.Progression.Level}/{playerStats.Progression.TotalXp} XP)"
                 )
                 .AddField("Kill/Death",
-                    $"**Kills:** {numKills}\n" +
-                    $"**Deaths:** {numDeaths}\n" +
-                    $"**Assists:** {numAssists}\n" +
-                    $"**K/D:** {kd}",
+                    $"**Kills:** {stats.General.Kills}\n" +
+                    $"**Deaths:** {stats.General.Deaths}\n" +
+                    $"**Assists:** {stats.General.Assists}\n" +
+                    $"**K/D:** {stats.General.Kd}",
                     true)
                 .AddField("Win/Loss",
-                    $"**Won:** {numWon} ({winPercent}%)\n" +
-                    $"**Lost:** {numLost} ({100 - winPercent}%)\n" +
-                    $"**W/L:** {winLoss}\n" +
+                    $"**Won:** {stats.General.Wins} ({winPercent}%)\n" +
+                    $"**Lost:** {stats.General.Losses} ({100 - winPercent}%)\n" +
+                    $"**W/L:** {stats.General.Wl}\n" +
                     $"**Playtime:** {playtime}",
                     true)
                 .AddField("Stats",
-                    $"**DBNOs:** {numDbnos}\n" +
-                    $"**Headshots:** {numHeadshots}\n" +
-                    $"**Penetrations:** {numPenetrations}\n" +
-                    $"**Melees:** {numMelees}\n" +
-                    $"**Revives:** {numRevives}\n" +
-                    $"**Blind Kills:** {numBlindKills}",
+                    $"**DBNOs:** {stats.General.Dbnos}\n" +
+                    $"**Headshots:** {stats.General.Headshots}\n" +
+                    $"**Penetrations:** {stats.General.PenetrationKills}\n" +
+                    $"**Melees:** {stats.General.MeleeKills}\n" +
+                    $"**Revives:** {stats.General.Revives}\n" +
+                    $"**Blind Kills:** {stats.General.BlindKills}",
                     true)
                 .AddField("Shots",
-                    $"**Fired:** {numShots}\n" +
-                    $"**Hit:** {numHit}\n" +
+                    $"**Fired:** {stats.General.BulletsFired}\n" +
+                    $"**Hit:** {stats.General.BulletsHit}\n" +
                     $"**Accuracy:** {shotHitAccuracy}%",
                     true)
                 .AddField("Extras",
-                    $"**Suicides:** {numSuicides}\n" +
-                    $"**Barricades:** {numBarricades}\n" +
-                    $"**Reinforcements:** {numReinforcements}\n" +
-                    $"**Gadgets Destroyed:** {numGadgetDestroyed}\n" +
-                    $"**Rappel Breaches:** {numRappelBreaches}\n" +
-                    $"**Disatance Travelled:** {distanceTravelled}",
+                    $"**Suicides:** {stats.General.Suicides}\n" +
+                    $"**Barricades:** {stats.General.BarricadesDeployed}\n" +
+                    $"**Reinforcements:** {stats.General.ReinforcementsDeployed}\n" +
+                    $"**Gadgets Destroyed:** {stats.General.GadgetsDestroyed}\n" +
+                    $"**Rappel Breaches:** {stats.General.RappelBreaches}\n" +
+                    $"**Disatance Travelled:** {stats.General.DistanceTravelled:n0}m",
                     true)
                 .AddField("Quick Rank",
-                    $"**Wins:** {numRankedWon} ({winRankedPercent}%)\n" +
-                    $"**Losses:** {numRankedLost} ({100 - winRankedPercent}%)\n" +
-                    $"**W/L:** {rankedWinLoss}\n" +
-                    $"**K/D:** {rankedKd}\n" +
+                    $"**Wins:** {stats.Queue.Ranked.Wins} ({winRankedPercent}%)\n" +
+                    $"**Losses:** {stats.Queue.Ranked.Losses} ({100 - winRankedPercent}%)\n" +
+                    $"**W/L:** {stats.Queue.Ranked.Wl}\n" +
+                    $"**K/D:** {stats.Queue.Ranked.Kd}\n" +
                     $"**Playtime:** {rankedPlaytime}",
                     true)
                 .AddField("Bomb",
-                    $"**Wins:** {numBombWins} ({bombWinPercent}%)\n" +
-                    $"**Losses:** {numBombLosses} ({100 - bombWinPercent}%)\n" +
-                    $"**Best Score:** {numBombBestScore}",
+                    $"**Wins:** {stats.Gamemode.Bomb.Wins} ({bombWinPercent}%)\n" +
+                    $"**Losses:** {stats.Gamemode.Bomb.Losses} ({100 - bombWinPercent}%)\n" +
+                    $"**Best Score:** {stats.Gamemode.Bomb.BestScore}",
                     true)
                 .AddField("Hostage",
-                    $"**Wins:** {numHostageWins} ({hostageWinPercent}%)\n" +
-                    $"**Losses:** {numHostageLosses} ({100 - hostageWinPercent}%)\n" +
-                    $"**Best Score:** {numHostageBestScore}\n" +
-                    $"**Extractions Denied:** {numHostageExtractionsDenied}",
+                    $"**Wins:** {stats.Gamemode.Hostage.Wins} ({hostageWinPercent}%)\n" +
+                    $"**Losses:** {stats.Gamemode.Hostage.Losses} ({100 - hostageWinPercent}%)\n" +
+                    $"**Best Score:** {stats.Gamemode.Hostage.BestScore}\n" +
+                    $"**Extractions Denied:** {stats.Gamemode.Hostage.ExtractionsDenied}",
                     true)
                 .AddField("Secure",
-                    $"**Wins:** {numSecureWins} ({secureWinPercent}%)\n" +
-                    $"**Losses:** {numSecureLosses} ({100 - secureWinPercent}%)\n" +
-                    $"**Best Score:** {numSecureBestScore}\n" +
-                    $"**Obj. Kills (ATK):** {numKillsAsAttackerInObjective}\n" +
-                    $"**Obj. Kills (DEF):** {numKillsAsDefenderInObjective}\n" +
-                    $"**Objectives Secured:** {numTimesObjectiveSecured}",
+                    $"**Wins:** {stats.Gamemode.SecureArea.Wins} ({secureWinPercent}%)\n" +
+                    $"**Losses:** {stats.Gamemode.SecureArea.Losses} ({100 - secureWinPercent}%)\n" +
+                    $"**Best Score:** {stats.Gamemode.SecureArea.BestScore}\n" +
+                    $"**Obj. Kills (ATK):** {stats.Gamemode.SecureArea.KillsAsAttackerInObjective}\n" +
+                    $"**Obj. Kills (DEF):** {stats.Gamemode.SecureArea.KillsAsDefenderInObjective}\n" +
+                    $"**Objectives Secured:** {stats.Gamemode.SecureArea.TimesObjectiveSecured}",
                     true);
 
             await ctx.RespondAsync(embed: embed);
