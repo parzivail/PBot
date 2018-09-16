@@ -4,7 +4,6 @@ namespace DiscordPBot.Reddit
 {
     public class RedditPayload
     {
-        [JsonProperty("children")]
-        public RedditPost[] Posts { get; set; }
+        [JsonProperty("children")] public RedditPost[] Posts { get; set; }
     }
 }

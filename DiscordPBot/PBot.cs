@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using DiscordPBot.Commands;
 using DiscordPBot.Util;
 using DotNetEnv;
 using DSharpPlus;
@@ -11,18 +8,18 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
-using DSharpPlus.Net.WebSocket;
 
 namespace DiscordPBot
 {
     internal class PBot
     {
+        private const string AppName = "PBot";
         private static string _discordToken;
         private static DiscordClient _discord;
         private static InteractivityModule _interactivity;
         private static CommandsNextModule _commands;
 
-        private const string AppName = "PBot";
+        public static Random Rng { get; } = new Random();
 
         private static void LoadEnv()
         {
@@ -53,7 +50,7 @@ namespace DiscordPBot
                 EnableMentionPrefix = true,
                 EnableDms = true
             });
-            _commands.RegisterCommands<Commands.PCommands>();
+            _commands.RegisterCommands<PCommands>();
             _commands.SetHelpFormatter<HelpFormatter>();
 
             _discord.Ready += DiscordOnReady;

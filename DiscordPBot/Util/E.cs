@@ -4,7 +4,7 @@ using System.IO;
 
 namespace DiscordPBot.Util
 {
-    static class E
+    internal static class E
     {
         public static byte[] ToBytes(this Image img)
         {

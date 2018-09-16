@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
+﻿using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DiscordPBot.Reddit;
@@ -13,9 +10,10 @@ using Newtonsoft.Json;
 
 namespace DiscordPBot.Commands
 {
-    partial class PCommands
+    internal partial class PCommands
     {
-        [Command("peekr"), Description("Gets this year's top 3 posts of a particular subreddit.")]
+        [Command("peekr")]
+        [Description("Gets this year's top 3 posts of a particular subreddit.")]
         public async Task Peekr(CommandContext ctx, string subreddit)
         {
             await ctx.TriggerTypingAsync();

@@ -7,9 +7,11 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace DiscordPBot.Commands
 {
-    partial class PCommands
+    internal partial class PCommands
     {
-        [Command("doimg"), Description("DEBUG COMMAND"), Hidden]
+        [Command("doimg")]
+        [Description("DEBUG COMMAND")]
+        [Hidden]
         public async Task DoImg(CommandContext ctx)
         {
             await ctx.TriggerTypingAsync();
@@ -24,7 +26,9 @@ namespace DiscordPBot.Commands
                 }
 
                 using (var ms = new MemoryStream(bmp.ToBytes()))
+                {
                     await ctx.RespondWithFileAsync(ms, "image.png");
+                }
             }
         }
     }

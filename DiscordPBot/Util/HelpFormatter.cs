@@ -69,7 +69,8 @@ namespace DiscordPBot.Util
         public IHelpFormatter WithArguments(IEnumerable<CommandArgument> arguments)
         {
             _messageBuilder.Append("Arguments: ")
-                .AppendLine(string.Join(", ", arguments.Select(xarg => $"{xarg.Name} ({xarg.Type.ToUserFriendlyName()})")))
+                .AppendLine(string.Join(", ",
+                    arguments.Select(xarg => $"{xarg.Name} ({xarg.Type.ToUserFriendlyName()})")))
                 .AppendLine();
 
             return this;

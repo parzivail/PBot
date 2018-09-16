@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -15,9 +14,10 @@ using Newtonsoft.Json;
 
 namespace DiscordPBot.Commands
 {
-    partial class PCommands
+    internal partial class PCommands
     {
-        [Command("r6op"), Description("Get operator stats about a player on PC.")]
+        [Command("r6op")]
+        [Description("Get operator stats about a player on PC.")]
         public async Task Rainbow6Op(CommandContext ctx, string username)
         {
             await ctx.TriggerTypingAsync();
@@ -105,7 +105,9 @@ namespace DiscordPBot.Commands
                 foreach (var ability in op.Abilities)
                     extras.Append($"\n**{ability.Title}:** {ability.Value}");
 
-                embed = embed.AddField($"{op.Operator.Name} ({op.Operator.Role})", $"**Kills:** {op.Kills}\n**Deaths:** {op.Deaths}\n**K/D:** {op.Kd}\n**Playtime:** {op.Playtime.Seconds().Humanize(maxUnit: TimeUnit.Hour)}{extras}", true);
+                embed = embed.AddField($"{op.Operator.Name} ({op.Operator.Role})",
+                    $"**Kills:** {op.Kills}\n**Deaths:** {op.Deaths}\n**K/D:** {op.Kd}\n**Playtime:** {op.Playtime.Seconds().Humanize(maxUnit: TimeUnit.Hour)}{extras}",
+                    true);
             }
 
             await ctx.RespondAsync(embed: embed);
