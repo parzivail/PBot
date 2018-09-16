@@ -3,7 +3,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using DiscordPBot.RainbowSix;
+using DiscordPBot.Schemas.RainbowSix;
 using DiscordPBot.Util;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;

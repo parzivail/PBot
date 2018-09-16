@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DiscordPBot.Commands;
 using DiscordPBot.Util;
@@ -62,9 +63,6 @@ namespace DiscordPBot
             LogInfo("PBot engine running.");
 
             await Task.Delay(-1);
-
-            Console.WriteLine("End of Line.");
-            Console.ReadKey();
         }
 
         private static Task DiscordOnClientErrored(ClientErrorEventArgs args)

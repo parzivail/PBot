@@ -1,7 +1,7 @@
 ﻿using System;
 using Newtonsoft.Json;
 
-namespace DiscordPBot.RainbowSix
+namespace DiscordPBot.Schemas.RainbowSix
 {
     public class Timestamps
     {

@@ -1,7 +1,7 @@
 ﻿using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using DiscordPBot.Reddit;
+using DiscordPBot.Schemas.Reddit;
 using DiscordPBot.Util;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;

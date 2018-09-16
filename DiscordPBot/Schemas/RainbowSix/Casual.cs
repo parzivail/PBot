@@ -1,8 +1,8 @@
 ﻿using Newtonsoft.Json;
 
-namespace DiscordPBot.RainbowSix
+namespace DiscordPBot.Schemas.RainbowSix
 {
-    public class Ranked
+    public class Casual
     {
         [JsonProperty("deaths")] public int Deaths { get; set; }
 

@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace DiscordPBot.Reddit
+namespace DiscordPBot.Schemas.Reddit
 {
     public class RedditPayload
     {

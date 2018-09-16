@@ -1,12 +1,16 @@
 ﻿using Newtonsoft.Json;
 
-namespace DiscordPBot.RainbowSix
+namespace DiscordPBot.Schemas.RainbowSix
 {
-    public class Bomb
+    public class Ranked
     {
-        [JsonProperty("best_score")] public int BestScore { get; set; }
+        [JsonProperty("deaths")] public int Deaths { get; set; }
 
         [JsonProperty("games_played")] public int GamesPlayed { get; set; }
+
+        [JsonProperty("kd")] public float Kd { get; set; }
+
+        [JsonProperty("kills")] public int Kills { get; set; }
 
         [JsonProperty("losses")] public int Losses { get; set; }
 
