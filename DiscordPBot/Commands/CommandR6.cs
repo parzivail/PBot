@@ -112,7 +112,7 @@ namespace DiscordPBot.Commands
             var numReinforcements = playerStats.Stats[0].General.ReinforcementsDeployed;
             var numGadgetDestroyed = playerStats.Stats[0].General.GadgetsDestroyed;
             var numRappelBreaches = playerStats.Stats[0].General.RappelBreaches;
-            var distanceTravelled = $"{playerStats.Stats[0].General.DistanceTravelled / 1000:n0}m";
+            var distanceTravelled = $"{playerStats.Stats[0].General.DistanceTravelled:n0}m";
 
             var numBombWins = playerStats.Stats[0].Gamemode.Bomb.Wins;
             var numBombLosses = playerStats.Stats[0].Gamemode.Bomb.Losses;
@@ -179,6 +179,13 @@ namespace DiscordPBot.Commands
                     $"**Rappel Breaches:** {numRappelBreaches}\n" +
                     $"**Disatance Travelled:** {distanceTravelled}",
                     true)
+                .AddField("Quick Rank",
+                    $"**Wins:** {numRankedWon} ({winRankedPercent}%)\n" +
+                    $"**Losses:** {numRankedLost} ({100 - winRankedPercent}%)\n" +
+                    $"**W/L:** {rankedWinLoss}\n" +
+                    $"**K/D:** {rankedKd}\n" +
+                    $"**Playtime:** {rankedPlaytime}",
+                    true)
                 .AddField("Bomb",
                     $"**Wins:** {numBombWins} ({bombWinPercent}%)\n" +
                     $"**Losses:** {numBombLosses} ({100 - bombWinPercent}%)\n" +
@@ -197,13 +204,6 @@ namespace DiscordPBot.Commands
                     $"**Obj. Kills (ATK):** {numKillsAsAttackerInObjective}\n" +
                     $"**Obj. Kills (DEF):** {numKillsAsDefenderInObjective}\n" +
                     $"**Objectives Secured:** {numTimesObjectiveSecured}",
-                    true)
-                .AddField("Quick Rank",
-                    $"**Wins:** {numRankedWon} ({winRankedPercent}%)\n" +
-                    $"**Losses:** {numRankedLost} ({100 - winRankedPercent}%)\n" +
-                    $"**W/L:** {rankedWinLoss}\n" +
-                    $"**K/D:** {rankedKd}\n" +
-                    $"**Playtime:** {rankedPlaytime}",
                     true);
 
             await ctx.RespondAsync(embed: embed);
