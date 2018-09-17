@@ -37,9 +37,15 @@ namespace DiscordPBot
         {
             LoadEnv();
 
+            // Production Bot:
             // Client ID: 490629949565435927
             // Permissions integer: 51264
             // Invite link: https://discordapp.com/oauth2/authorize?client_id=490629949565435927&scope=bot&permissions=51264
+
+            // Dev Bot:
+            // Client ID: 491370448425058306
+            // Permissions integer: 51264
+            // Invite link: https://discordapp.com/oauth2/authorize?client_id=491370448425058306&scope=bot&permissions=51264
 
             _discord = new DiscordClient(new DiscordConfiguration
             {

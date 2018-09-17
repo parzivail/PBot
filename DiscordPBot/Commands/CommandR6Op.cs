@@ -26,33 +26,9 @@ namespace DiscordPBot.Commands
 
             using (var wc = new WebClient())
             {
-                R6PlayerSearchJson[] searchResults;
+                var player = await SiegeUtils.GetPlayer(ctx, username);
 
-                try
-                {
-                    var reqUrl = $"https://www.r6stats.com/api/player-search/{username}/pc";
-                    var json = wc.DownloadString(reqUrl);
-                    searchResults = JsonConvert.DeserializeObject<R6PlayerSearchJson[]>(json);
-                }
-                catch (WebException)
-                {
-                    await ctx.RespondAsync(":warning: No players found with that username.");
-                    return;
-                }
-                catch (JsonSerializationException e)
-                {
-                    PBot.LogError($"r6op search JsonSerializationException: {e.Message}");
-                    await ctx.RespondAsync(":interrobang: Could not load players.");
-                    return;
-                }
-                catch (JsonReaderException e)
-                {
-                    PBot.LogError($"r6op search JsonSerializationException: {e.Message}");
-                    await ctx.RespondAsync(":interrobang: Could not load players.");
-                    return;
-                }
-
-                if (searchResults.Length == 0)
+                if (player == null)
                 {
                     await ctx.RespondAsync(":warning: No players found with that username.");
                     return;
@@ -60,7 +36,7 @@ namespace DiscordPBot.Commands
 
                 try
                 {
-                    var reqUrl = $"https://www.r6stats.com/api/stats/{searchResults[0].UbisoftId}";
+                    var reqUrl = $"https://www.r6stats.com/api/stats/{player.UbisoftId}";
                     var json = wc.DownloadString(reqUrl);
                     playerStats = JsonConvert.DeserializeObject<R6PlayerStatsJson>(json);
                 }
