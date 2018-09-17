@@ -19,7 +19,7 @@ namespace DiscordPBot.Commands
             new R6Rank
             {
                 Name = "Unranked",
-                ImageUrl = "Unranked"
+                ImageUrl = "unranked"
             },
             new R6Rank
             {
@@ -125,13 +125,13 @@ namespace DiscordPBot.Commands
 
         [Command("r6rank")]
         [Description("Get stats about a player on PC.")]
-        public async Task Rainbow6Rank(CommandContext ctx, string username, [RemainingText] string season)
+        public async Task Rainbow6Rank(CommandContext ctx, string username, [RemainingText] string seasonName)
         {
             await ctx.TriggerTypingAsync();
 
-            if (season == null)
-                season = "";
-            season = season.Trim().Replace(" ", "_").ToLower();
+            if (seasonName == null)
+                seasonName = "";
+            seasonName = seasonName.Trim().Replace(" ", "_").ToLower();
 
             R6PlayerSeasonStats playerStats;
 
@@ -171,29 +171,31 @@ namespace DiscordPBot.Commands
                 }
             }
 
-            if (string.IsNullOrWhiteSpace(season))
-                season = playerStats.Seasons.Values.OrderByDescending(season1 => season1.StartDate).First().Key;
+            if (string.IsNullOrWhiteSpace(seasonName))
+                seasonName = playerStats.Seasons.Values.OrderByDescending(season1 => season1.StartDate).First().Key;
 
-            if (!playerStats.Seasons.ContainsKey(season))
+            if (!playerStats.Seasons.ContainsKey(seasonName))
             {
-                await ctx.RespondAsync(":warning: No season found with that name.");
+                await ctx.RespondAsync(":warning: No seasonName found with that name.");
                 return;
             }
 
-            var stats = playerStats.Seasons[season].Regions.Ncsa[0];
+            var season = playerStats.Seasons[seasonName];
+            var stats = season.Regions.Ncsa[0];
 
-            var winPercent = (int)(stats.Wins / (float) (stats.Wins + stats.Losses + stats.Abandons) * 100);
-            var lossPercent = (int)(stats.Losses / (float) (stats.Wins + stats.Losses + stats.Abandons) * 100);
-            var abandonPercent = (int)(stats.Abandons / (float) (stats.Wins + stats.Losses + stats.Abandons) * 100);
+            var totalGames = stats.Wins + stats.Losses + stats.Abandons;
+            var winPercent = totalGames == 0 ? 0 : (int)(stats.Wins / (float)totalGames * 100);
+            var lossPercent = totalGames == 0 ? 0 : (int)(stats.Losses / (float)totalGames * 100);
+            var abandonPercent = totalGames == 0 ? 0 : (int)(stats.Abandons / (float)totalGames * 100);
 
             username = playerStats.Username;
             var ubisoftId = playerStats.UbisoftId;
 
             var embed = new DiscordEmbedBuilder()
                 .WithColor(PDiscordColor.SiegeYellow)
-                .WithThumbnailUrl($"https://ubisoft-avatars.akamaized.net/{ubisoftId}/default_146_146.png")
+                .WithThumbnailUrl($"https://raw.githubusercontent.com/parzivail/PBot/master/DiscordPBot/Resources/R6Ranks/{Ranks[stats.Rank].ImageUrl}.png")
                 .WithAuthor(
-                    $"{username}'s Rank (Operation {season})"
+                    $"{username}'s Rank (Operation {season.Name})"
                 )
                 .AddField("Win/Loss",
                     $"Wins: {stats.Wins} ({winPercent}%)\n" +
