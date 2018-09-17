@@ -28,7 +28,12 @@ namespace DiscordPBot
             _discordToken = Env.GetString("DISCORD_TOKEN");
         }
 
-        private static async Task Main(string[] args)
+        private static void Main(string[] args)
+        {
+            AsyncMain().ConfigureAwait(false).GetAwaiter().GetResult();
+        }
+
+        private static async Task AsyncMain()
         {
             LoadEnv();
 
