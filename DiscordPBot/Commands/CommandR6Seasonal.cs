@@ -198,19 +198,19 @@ namespace DiscordPBot.Commands
                     $"{username}'s Rank (Operation {season.Name})"
                 )
                 .AddField("Win/Loss",
-                    $"Wins: {stats.Wins} ({winPercent}%)\n" +
-                    $"Losses: {stats.Losses} ({lossPercent}%)\n" +
-                    $"Abandons: {stats.Abandons} ({abandonPercent}%)",
+                    $"**Wins**: {stats.Wins} ({winPercent}%)\n" +
+                    $"**Losses**: {stats.Losses} ({lossPercent}%)\n" +
+                    $"**Abandons**: {stats.Abandons} ({abandonPercent}%)",
                     true)
                 .AddField("Rank",
-                    $"Rank: {Ranks[stats.Rank].Name}\n" +
-                    $"Max Rank: {Ranks[stats.MaxRank].Name}",
+                    $"**Rank**: {Ranks[stats.Rank].Name}\n" +
+                    $"**Max Rank**: {Ranks[stats.MaxRank].Name}",
                     true)
                 .AddField("Stats",
-                    $"MMR: {stats.Mmr}\n" +
-                    $"Max MMR: {stats.MaxMmr}\n" +
-                    $"Skill (mean): {stats.SkillMean}\n" +
-                    $"Skill (std. dev.): {stats.SkillStandardDeviation}",
+                    $"**MMR**: {stats.Mmr}\n" +
+                    $"**Max MMR**: {stats.MaxMmr}\n" +
+                    $"**Skill (mean)**: {stats.SkillMean}\n" +
+                    $"**Skill (std. dev.)**: {stats.SkillStandardDeviation}",
                     true);
 
             await ctx.RespondAsync(embed: embed);
