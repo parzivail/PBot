@@ -193,7 +193,7 @@ namespace DiscordPBot.Commands
 
             var embed = new DiscordEmbedBuilder()
                 .WithColor(PDiscordColor.SiegeYellow)
-                .WithThumbnailUrl($"https://raw.githubusercontent.com/parzivail/PBot/master/DiscordPBot/Resources/R6Ranks/{Ranks[stats.Rank].ImageUrl}.png")
+                .WithThumbnailUrl($"https://raw.githubusercontent.com/parzivail/PBot/master/DiscordPBot/Resources/R6RankImages/{Ranks[stats.Rank].ImageUrl}.png")
                 .WithAuthor(
                     $"{username}'s Rank (Operation {season.Name})"
                 )

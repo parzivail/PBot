@@ -35,67 +35,67 @@
     <None Update="Resources\Clippy\clippy.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\bronze-1.png">
+    <None Update="Resources\R6RankImages\bronze-1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\bronze-2.png">
+    <None Update="Resources\R6RankImages\bronze-2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\bronze-3.png">
+    <None Update="Resources\R6RankImages\bronze-3.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\bronze-4.png">
+    <None Update="Resources\R6RankImages\bronze-4.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\copper-1.png">
+    <None Update="Resources\R6RankImages\copper-1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\copper-2.png">
+    <None Update="Resources\R6RankImages\copper-2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\copper-3.png">
+    <None Update="Resources\R6RankImages\copper-3.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\copper-4.png">
+    <None Update="Resources\R6RankImages\copper-4.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\diamond.png">
+    <None Update="Resources\R6RankImages\diamond.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\gold-1.png">
+    <None Update="Resources\R6RankImages\gold-1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\gold-2.png">
+    <None Update="Resources\R6RankImages\gold-2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\gold-3.png">
+    <None Update="Resources\R6RankImages\gold-3.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\gold-4.png">
+    <None Update="Resources\R6RankImages\gold-4.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\platinum-1.png">
+    <None Update="Resources\R6RankImages\platinum-1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\platinum-2.png">
+    <None Update="Resources\R6RankImages\platinum-2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\platinum-3.png">
+    <None Update="Resources\R6RankImages\platinum-3.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\silver-1.png">
+    <None Update="Resources\R6RankImages\silver-1.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\silver-2.png">
+    <None Update="Resources\R6RankImages\silver-2.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\silver-3.png">
+    <None Update="Resources\R6RankImages\silver-3.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\silver-4.png">
+    <None Update="Resources\R6RankImages\silver-4.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="Resources\R6Ranks\unranked.png">
+    <None Update="Resources\R6RankImages\unranked.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
