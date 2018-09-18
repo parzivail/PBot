@@ -18,7 +18,9 @@ namespace DiscordPBot.Util
             {
                 var json = wc.DownloadString($"https://www.r6stats.com/api/player-search/{username}/pc");
                 var results = JsonConvert.DeserializeObject<R6PlayerSearchJson[]>(json);
-                return results.Length == 0 ? null : results[0];
+                if (results.Length == 0 || !results[0].Username.Equals(username, StringComparison.InvariantCultureIgnoreCase))
+                    return null;
+                return results[0];
             }
             catch (WebException)
             {

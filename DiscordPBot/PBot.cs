@@ -72,8 +72,6 @@ namespace DiscordPBot
             _commands.RegisterCommands<CommandPing>();
             _commands.RegisterCommands<CommandR6>();
             _commands.RegisterCommands<CommandR6Chat>();
-            _commands.RegisterCommands<CommandR6Op>();
-            _commands.RegisterCommands<CommandR6Seasonal>();
 
             _commands.SetHelpFormatter<HelpFormatter>();
 
