@@ -3,14 +3,14 @@ using Newtonsoft.Json;
 
 namespace DiscordPBot.Schemas.RainbowSix
 {
-    public class Ncsa
+    public class Region
     {
         [JsonProperty("id")]
         public int Id { get; set; }
         [JsonProperty("season_id")]
         public int SeasonId { get; set; }
         [JsonProperty("region")]
-        public string Region { get; set; }
+        public string RegionName { get; set; }
         [JsonProperty("abandons")]
         public int Abandons { get; set; }
         [JsonProperty("losses")]

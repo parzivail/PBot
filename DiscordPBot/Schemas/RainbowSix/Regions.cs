@@ -5,10 +5,10 @@ namespace DiscordPBot.Schemas.RainbowSix
     public class Regions
     {
         [JsonProperty("ncsa")]
-        public Ncsa[] Ncsa { get; set; }
+        public Region[] Ncsa { get; set; }
         [JsonProperty("emea")]
-        public Emea[] Emea { get; set; }
+        public Region[] Emea { get; set; }
         [JsonProperty("apac")]
-        public Apac[] Apac { get; set; }
+        public Region[] Apac { get; set; }
     }
 }
