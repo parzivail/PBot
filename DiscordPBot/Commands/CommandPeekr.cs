@@ -10,7 +10,7 @@ using Newtonsoft.Json;
 
 namespace DiscordPBot.Commands
 {
-    internal partial class PCommands
+    internal class CommandPeekr
     {
         [Command("peekr")]
         [Description("Gets this year's top 3 posts of a particular subreddit.")]

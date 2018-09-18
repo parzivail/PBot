@@ -12,7 +12,7 @@ using Newtonsoft.Json;
 
 namespace DiscordPBot.Commands
 {
-    internal partial class PCommands
+    internal class CommandR6Seasonal
     {
         private static readonly R6Rank[] Ranks =
         {
@@ -137,7 +137,7 @@ namespace DiscordPBot.Commands
 
             using (var wc = new WebClient())
             {
-                var player = await SiegeUtils.GetPlayer(ctx, username);
+                var player = await SiegeUtils.GetPlayer(ctx, username, wc);
 
                 if (player == null)
                 {

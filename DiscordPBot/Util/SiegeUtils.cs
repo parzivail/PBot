@@ -12,13 +12,11 @@ namespace DiscordPBot.Util
 {
     class SiegeUtils
     {
-        public static async Task<R6PlayerSearchJson> GetPlayer(CommandContext ctx, string username)
+        public static async Task<R6PlayerSearchJson> GetPlayer(CommandContext ctx, string username, WebClient wc)
         {
-            var client = new HttpClient();
-
             try
             {
-                var json = await client.GetStringAsync($"https://www.r6stats.com/api/player-search/{username}/pc");
+                var json = wc.DownloadString($"https://www.r6stats.com/api/player-search/{username}/pc");
                 var results = JsonConvert.DeserializeObject<R6PlayerSearchJson[]>(json);
                 return results.Length == 0 ? null : results[0];
             }

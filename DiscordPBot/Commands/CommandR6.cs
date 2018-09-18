@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 
 namespace DiscordPBot.Commands
 {
-    internal partial class PCommands
+    internal class CommandR6
     {
         [Command("r6")]
         [Description("Get stats about a player on PC.")]
@@ -23,7 +23,7 @@ namespace DiscordPBot.Commands
 
             using (var wc = new WebClient())
             {
-                var player = await SiegeUtils.GetPlayer(ctx, username);
+                var player = await SiegeUtils.GetPlayer(ctx, username, wc);
 
                 if (player == null)
                 {

@@ -7,7 +7,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace DiscordPBot.Commands
 {
-    internal partial class PCommands
+    internal class CommandDoImg
     {
         [Command("doimg")]
         [Description("DEBUG COMMAND")]

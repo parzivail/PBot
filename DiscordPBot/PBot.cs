@@ -9,6 +9,7 @@ using DSharpPlus.CommandsNext;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using DSharpPlus.Interactivity;
+using DSharpPlus.Net.WebSocket;
 
 namespace DiscordPBot
 {
@@ -62,7 +63,18 @@ namespace DiscordPBot
                 EnableMentionPrefix = true,
                 EnableDms = true
             });
-            _commands.RegisterCommands<PCommands>();
+
+            _commands.RegisterCommands<CommandClippy>();
+            _commands.RegisterCommands<CommandD20>();
+            _commands.RegisterCommands<CommandDoImg>();
+            _commands.RegisterCommands<Command8Ball>();
+            _commands.RegisterCommands<CommandPeekr>();
+            _commands.RegisterCommands<CommandPing>();
+            _commands.RegisterCommands<CommandR6>();
+            _commands.RegisterCommands<CommandR6Chat>();
+            _commands.RegisterCommands<CommandR6Op>();
+            _commands.RegisterCommands<CommandR6Seasonal>();
+
             _commands.SetHelpFormatter<HelpFormatter>();
 
             _discord.Ready += DiscordOnReady;

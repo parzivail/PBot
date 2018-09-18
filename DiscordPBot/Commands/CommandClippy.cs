@@ -10,7 +10,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace DiscordPBot.Commands
 {
-    internal partial class PCommands
+    internal class CommandClippy
     {
         private static Font _tahoma;
 

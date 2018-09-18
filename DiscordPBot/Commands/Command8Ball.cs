@@ -6,7 +6,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace DiscordPBot.Commands
 {
-    internal partial class PCommands
+    internal class Command8Ball
     {
         private static readonly List<EightBallReply> Replies = new List<EightBallReply>
         {

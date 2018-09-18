@@ -4,7 +4,7 @@ using DSharpPlus.CommandsNext.Attributes;
 
 namespace DiscordPBot.Commands
 {
-    internal partial class PCommands
+    internal class CommandD20
     {
         [Command("d")]
         [Description("Rolls an n sided die")]
