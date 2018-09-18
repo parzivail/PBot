@@ -119,7 +119,7 @@ namespace DiscordPBot.Commands
             new R6Rank
             {
                 Name = "Diamond",
-                ImageUrl = "platinum"
+                ImageUrl = "diamond"
             },
         };
 
