@@ -72,6 +72,8 @@ namespace DiscordPBot
             _commands.RegisterCommands<CommandPing>();
             _commands.RegisterCommands<CommandR6>();
             _commands.RegisterCommands<CommandR6Chat>();
+            _commands.RegisterCommands<CommandPollOpinion>();
+            _commands.RegisterCommands<CommandPoll>();
 
             _commands.SetHelpFormatter<HelpFormatter>();
 
