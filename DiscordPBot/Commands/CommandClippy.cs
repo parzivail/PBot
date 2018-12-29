@@ -33,11 +33,10 @@ namespace DiscordPBot.Commands
 
             using (var bmp = new Bitmap("Resources/Clippy/clippy.png"))
             {
-                using (var g = Graphics.FromImage(bmp))
-                {
-                    g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
-                    g.DrawString(message, _tahoma, Brushes.Black, new RectangleF(5, 8, 290, 64));
-                }
+                var g = Graphics.FromImage(bmp);
+
+                g.TextRenderingHint = TextRenderingHint.SingleBitPerPixelGridFit;
+                g.DrawString(message, _tahoma, Brushes.Black, new RectangleF(5, 8, 290, 64));
 
                 using (var ms = new MemoryStream(bmp.ToBytes()))
                 {

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -137,21 +138,21 @@ namespace DiscordPBot.Commands
             [Description("Get stats about a player on PC.")]
             public async Task Rainbow6Rank(CommandContext ctx, string username, [RemainingText] string seasonName)
             {
-                await ctx.TriggerTypingAsync();
+                var message = await ctx.RespondAsync(":clock10: Contacting player database...");
 
                 if (seasonName == null)
                     seasonName = "";
                 seasonName = seasonName.Trim().Replace(" ", "_").ToLower();
 
                 R6PlayerSeasonStats playerStats;
-
+                
                 using (var wc = new WebClient())
                 {
                     var player = await SiegeUtils.GetPlayer(ctx, username, wc);
 
                     if (player == null)
                     {
-                        await ctx.RespondAsync(":warning: No players found with that username.");
+                        await message.ModifyAsync(":warning: No players found with that username.");
                         return;
                     }
 
@@ -163,20 +164,26 @@ namespace DiscordPBot.Commands
                     }
                     catch (WebException e)
                     {
-                        PBot.LogError($"r6 stats WebException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not fetch player stats.");
+                        PBot.LogError($"r6 rank WebException: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not fetch player stats. ```WebException {e.Message}```");
                         return;
                     }
                     catch (JsonSerializationException e)
                     {
-                        PBot.LogError($"r6 stats JsonSerializationException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not load player stats.");
+                        PBot.LogError($"r6 rank JsonSerializationException: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```JsonSerializationException {e.Message}```");
                         return;
                     }
                     catch (JsonReaderException e)
                     {
-                        PBot.LogError($"r6 stats JsonSerializationException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not load player stats.");
+                        PBot.LogError($"r6 rank JsonReaderException: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```JsonReaderException {e.Message}```");
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        PBot.LogError($"r6 rank Exception: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```Exception {e.Message}```");
                         return;
                     }
                 }
@@ -186,7 +193,7 @@ namespace DiscordPBot.Commands
 
                 if (!playerStats.Seasons.ContainsKey(seasonName))
                 {
-                    await ctx.RespondAsync(":warning: No seasonName found with that name.");
+                    await message.ModifyAsync(":warning: No seasonName found with that name.");
                     return;
                 }
 
@@ -224,15 +231,15 @@ namespace DiscordPBot.Commands
                         $"**Skill (mean)**: {stats.SkillMean}\n" +
                         $"**Skill (std. dev.)**: {stats.SkillStandardDeviation}",
                         true);
-
-                await ctx.RespondAsync(embed: embed);
+                
+                await message.ModifyAsync("", embed);
             }
 
             [Command("stats")]
             [Description("Get stats about a player on PC.")]
             public async Task Rainbow6(CommandContext ctx, string username)
             {
-                await ctx.TriggerTypingAsync();
+                var message = await ctx.RespondAsync(":clock10: Contacting player database...");
 
                 R6PlayerStatsJson playerStats;
 
@@ -242,7 +249,7 @@ namespace DiscordPBot.Commands
 
                     if (player == null)
                     {
-                        await ctx.RespondAsync(":warning: No players found with that username.");
+                        await message.ModifyAsync(":warning: No players found with that username.");
                         return;
                     }
 
@@ -255,19 +262,25 @@ namespace DiscordPBot.Commands
                     catch (WebException e)
                     {
                         PBot.LogError($"r6 stats WebException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not fetch player stats.");
+                        await message.ModifyAsync($":interrobang: Could not fetch player stats. ```WebException {e.Message}```");
                         return;
                     }
                     catch (JsonSerializationException e)
                     {
                         PBot.LogError($"r6 stats JsonSerializationException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not load player stats.");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```JsonSerializationException {e.Message}```");
                         return;
                     }
                     catch (JsonReaderException e)
                     {
-                        PBot.LogError($"r6 stats JsonSerializationException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not load player stats.");
+                        PBot.LogError($"r6 stats JsonReaderException: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```JsonReaderException {e.Message}```");
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        PBot.LogError($"r6 stats Exception: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```Exception {e.Message}```");
                         return;
                     }
                 }
@@ -358,14 +371,14 @@ namespace DiscordPBot.Commands
                         $"**Objectives Secured:** {stats.Gamemode.SecureArea.TimesObjectiveSecured}",
                         true);
 
-                await ctx.RespondAsync(embed: embed);
+                await message.ModifyAsync("", embed);
             }
 
             [Command("ops")]
             [Description("Get operator stats about a player on PC.")]
             public async Task Rainbow6Op(CommandContext ctx, string username)
             {
-                await ctx.TriggerTypingAsync();
+                var message = await ctx.RespondAsync(":clock10: Contacting player database...");
 
                 R6PlayerStatsJson playerStats;
 
@@ -375,7 +388,7 @@ namespace DiscordPBot.Commands
 
                     if (player == null)
                     {
-                        await ctx.RespondAsync(":warning: No players found with that username.");
+                        await message.ModifyAsync(":warning: No players found with that username.");
                         return;
                     }
 
@@ -387,20 +400,26 @@ namespace DiscordPBot.Commands
                     }
                     catch (WebException e)
                     {
-                        PBot.LogError($"r6 stats WebException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not fetch player stats.");
+                        PBot.LogError($"r6 ops WebException: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not fetch player stats. ```WebException {e.Message}```");
                         return;
                     }
                     catch (JsonSerializationException e)
                     {
-                        PBot.LogError($"r6 stats JsonSerializationException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not load player stats.");
+                        PBot.LogError($"r6 ops JsonSerializationException: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```JsonSerializationException {e.Message}```");
                         return;
                     }
                     catch (JsonReaderException e)
                     {
-                        PBot.LogError($"r6 stats JsonSerializationException: {e.Message}");
-                        await ctx.RespondAsync(":interrobang: Could not load player stats.");
+                        PBot.LogError($"r6 ops JsonReaderException: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```JsonReaderException {e.Message}```");
+                        return;
+                    }
+                    catch (Exception e)
+                    {
+                        PBot.LogError($"r6 ops Exception: {e.Message}");
+                        await message.ModifyAsync($":interrobang: Could not load player stats. ```Exception {e.Message}```");
                         return;
                     }
                 }
@@ -431,7 +450,7 @@ namespace DiscordPBot.Commands
                         true);
                 }
 
-                await ctx.RespondAsync(embed: embed);
+                await message.ModifyAsync("", embed);
             }
         }
     }

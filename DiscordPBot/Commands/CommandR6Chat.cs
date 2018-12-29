@@ -36,13 +36,12 @@ namespace DiscordPBot.Commands
             using (var bmp = new Bitmap("Resources/Allchat/chatentry.png"))
             using (var newBitmap = new Bitmap(bmp.Width, bmp.Height))
             {
-                using (var g = Graphics.FromImage(newBitmap))
-                {
-                    g.DrawImage(bmp, 0, 0);
+                var g = Graphics.FromImage(newBitmap);
 
-                    g.TextRenderingHint = TextRenderingHint.AntiAlias;
-                    g.DrawString($"[ALL]  {who}: {message}", _scout, Brushes.White, new RectangleF(18, 18, 560, 35));
-                }
+                g.DrawImage(bmp, 0, 0);
+
+                g.TextRenderingHint = TextRenderingHint.AntiAlias;
+                g.DrawString($"[ALL]  {who}: {message}", _scout, Brushes.White, new RectangleF(18, 18, 560, 35));
 
                 using (var ms = new MemoryStream(newBitmap.ToBytes()))
                 {
