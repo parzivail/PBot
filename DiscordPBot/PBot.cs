@@ -38,8 +38,8 @@ namespace DiscordPBot
 		private const int CurseForgeProjectId = 496522;
 		private const string CurseForgeProjectSlug = "pswg";
 
-		private static readonly ManualResetEventSlim ExitHandle = new ManualResetEventSlim();
-		private static readonly WebClient Web = new WebClient();
+		private static readonly ManualResetEventSlim ExitHandle = new();
+		private static readonly WebClient Web = new();
 
 		private static string _discordToken;
 		private static Timer _taskScheduler;
@@ -48,7 +48,7 @@ namespace DiscordPBot
 
 		private static LiteDatabase _db;
 		private static ILiteCollection<BotUser> _users;
-		private static ILiteCollection<CurseForgeFiles> _cfFiles;
+		public static ILiteCollection<CurseForgeFiles> CfFileCollection { get; private set; }
 
 		private static HashSet<ulong> _bannedRegularChannels = new()
 		{
@@ -70,8 +70,8 @@ namespace DiscordPBot
 				_users = _db.GetCollection<BotUser>("bot_users");
 				_users.EnsureIndex(user => user.Id);
 
-				_cfFiles = _db.GetCollection<CurseForgeFiles>("cf_files");
-				_cfFiles.EnsureIndex(file => file.Id);
+				CfFileCollection = _db.GetCollection<CurseForgeFiles>("cf_files");
+				CfFileCollection.EnsureIndex(file => file.Id);
 
 				try
 				{
@@ -111,24 +111,24 @@ namespace DiscordPBot
 			_discord.ClientErrored += OnClientError;
 			_discord.MessageCreated += OnMessageCreated;
 
-
 			var commands = _discord.UseCommandsNext(new CommandsNextConfiguration()
 			{
 				StringPrefixes = new[] { "!p ", $"<@{SelfId}> " },
 			});
+			commands.RegisterCommands<PingModule>();
+			commands.RegisterCommands<CurseForgeModule>();
 			commands.RegisterCommands<RoleModule>();
 
-			// CF posting disabled for now
-			//StartTaskScheduler();
-
 			_discord.Logger.Log(LogLevel.Information, "PBot running");
+
+			StartTaskScheduler();
 
 			ExitHandle.Wait();
 		}
 
 		private static void StartTaskScheduler()
 		{
-			_taskScheduler = new Timer(ScheduledTask, null, TimeSpan.Zero, TimeSpan.FromMinutes(15));
+			_taskScheduler = new Timer(ScheduledTask, null, TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(15));
 		}
 
 		private static async void ScheduledTask(object state)
@@ -144,25 +144,26 @@ namespace DiscordPBot
 
 			var file = files.OrderByDescending(f => f.Id).First();
 
-			if (_cfFiles.Count() > 0 && _cfFiles.Exists(f => f.Id == file.Id))
+			if (CfFileCollection.Count() > 0 && CfFileCollection.Exists(f => f.Id == file.Id))
 				return;
-
-			_cfFiles.Insert(file);
+			
+			CfFileCollection.Insert(file);
 
 			var managedGuild = await GetManagedGuild();
 
-			var everyone = managedGuild.EveryoneRole;
 			var curseEmoji = await managedGuild.GetEmojiAsync(CurseForgeEmoji);
+			var downloadChannel = managedGuild.GetChannel(DownloadAnnouncementChannel);
 			var bugsChannel = managedGuild.GetChannel(BugsChannel);
 
 			var message = new DiscordMessageBuilder()
-				.WithContent($"{everyone.Mention}\n" +
+				.WithContent($"@everyone\n" +
 				             $"**{file.DisplayName}** has been released!\n" +
 				             $"**Download+changelog:**\n" +
 				             $"{curseEmoji} https://www.curseforge.com/minecraft/mc-mods/{CurseForgeProjectSlug}/files/{file.Id}\n" +
 				             $"Bugs? {bugsChannel.Mention}!");
 
-			SendToDownloads(message);
+			await message.SendAsync(downloadChannel);
+			SendToManagement(new DiscordMessageBuilder().WithContent($":white_check_mark: Found new CurseForge file **{file.DisplayName}** (`{file.Id}`), notified {downloadChannel.Mention}"));
 		}
 
 		private static async void SendToManagement(DiscordMessageBuilder message)
@@ -234,7 +235,30 @@ namespace DiscordPBot
 			}
 		}
 	}
-	
+
+	public class PingModule : BaseCommandModule
+	{
+		[Command("ping")]
+		public async Task Ping(CommandContext ctx)
+		{
+			await ctx.Message.RespondAsync($":ping_pong: {ctx.Client.Ping} ms");
+		}
+	}
+
+	public class CurseForgeModule : BaseCommandModule
+	{
+		[Command("cf_latest")]
+		public async Task GetLatest(CommandContext ctx)
+		{
+			var file = PBot.CfFileCollection.Query()
+				.OrderByDescending(files => files.FileDate)
+				.First();
+
+			var timestamp = (DateTimeOffset)file.FileDate;
+			await ctx.Message.RespondAsync($"Most recent CurseForge file is **{file.DisplayName}** (`{file.Id}`), released <t:{timestamp.ToUnixTimeSeconds()}:R>");
+		}
+	}
+
 	public class RoleModule : BaseCommandModule
 	{
 		private static Dictionary<string, ulong> _roleNames = new()
@@ -246,7 +270,7 @@ namespace DiscordPBot
 			{ "droid", 541458558915444746 },
 			{ "event", 497574739041320960 },
 		};
-		
+
 		[Command("join")]
 		public async Task Join(CommandContext ctx, string role)
 		{
@@ -256,7 +280,7 @@ namespace DiscordPBot
 				var roleInstance = ctx.Guild.GetRole(roleId);
 				var member = await ctx.Guild.GetMemberAsync(ctx.User.Id);
 				await member.GrantRoleAsync(roleInstance);
-				
+
 				await ctx.Message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
 			}
 			else
@@ -264,7 +288,7 @@ namespace DiscordPBot
 				await ctx.Message.RespondAsync($"No role named **{role}**!");
 			}
 		}
-		
+
 		[Command("leave")]
 		public async Task Leave(CommandContext ctx, string role)
 		{
@@ -274,7 +298,7 @@ namespace DiscordPBot
 				var roleInstance = ctx.Guild.GetRole(roleId);
 				var member = await ctx.Guild.GetMemberAsync(ctx.User.Id);
 				await member.RevokeRoleAsync(roleInstance);
-				
+
 				await ctx.Message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
 			}
 			else
