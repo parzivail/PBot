@@ -133,6 +133,11 @@ namespace DiscordPBot
 
 		private static async void ScheduledTask(object state)
 		{
+			await RefreshCurseFiles();
+		}
+
+		public static async Task RefreshCurseFiles()
+		{
 			var response = await Web.DownloadStringTaskAsync($"https://addons-ecs.forgesvc.net/api/v2/addon/{CurseForgeProjectId}/files");
 			var files = JsonConvert.DeserializeObject<CurseForgeFiles[]>(response);
 
@@ -155,14 +160,16 @@ namespace DiscordPBot
 			var downloadChannel = managedGuild.GetChannel(DownloadAnnouncementChannel);
 			var bugsChannel = managedGuild.GetChannel(BugsChannel);
 
-			var message = new DiscordMessageBuilder()
+			var messageBuilder = new DiscordMessageBuilder()
 				.WithContent($"@everyone\n" +
 				             $"**{file.DisplayName}** has been released!\n" +
 				             $"**Download+changelog:**\n" +
 				             $"{curseEmoji} https://www.curseforge.com/minecraft/mc-mods/{CurseForgeProjectSlug}/files/{file.Id}\n" +
 				             $"Bugs? {bugsChannel.Mention}!");
 
-			await message.SendAsync(downloadChannel);
+			var message = await messageBuilder.SendAsync(downloadChannel);
+			await downloadChannel.CrosspostMessageAsync(message);
+			
 			SendToManagement(new DiscordMessageBuilder().WithContent($":white_check_mark: Found new CurseForge file **{file.DisplayName}** (`{file.Id}`), notified {downloadChannel.Mention}"));
 		}
 
@@ -256,6 +263,13 @@ namespace DiscordPBot
 
 			var timestamp = (DateTimeOffset)file.FileDate;
 			await ctx.Message.RespondAsync($"Most recent CurseForge file is **{file.DisplayName}** (`{file.Id}`), released <t:{timestamp.ToUnixTimeSeconds()}:R>");
+		}
+		
+		[Command("cf_refresh")]
+		public async Task Refresh(CommandContext ctx)
+		{
+			await PBot.RefreshCurseFiles();
+			await ctx.Message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
 		}
 	}
 
