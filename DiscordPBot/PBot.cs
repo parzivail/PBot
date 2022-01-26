@@ -27,28 +27,29 @@ namespace DiscordPBot
 	{
 		private const bool Production = true;
 
-		private const string AppName = "PBot";
+		private static string _appName = "PBot";
+		
+		private static string _discordToken;
 
-		internal const ulong OwnerId = 135836100198531073;
+		private static ulong _ownerId;
+		private static ulong _guild;
+		
+		private static ulong _managementChannel;
+		private static ulong _downloadAnnouncementChannel;
+		private static ulong _generalChannel;
+		private static ulong _suggestionsChannel;
+		private static ulong _bugsChannel;
+		private static ulong _supportChannel;
 
-		private const ulong Guild = 412945916476129280;
-		private const ulong ManagementChannel = 844606217636675644;
-		private const ulong DownloadAnnouncementChannel = 427921970605195264;
-		private const ulong GeneralChannel = 412945916476129282;
-		private const ulong SuggestionsChannel = 517885814097575950;
-		private const ulong BugsChannel = 800139171687563275;
-		private const ulong SupportChannel = 920480148451639356;
+		private static ulong _curseForgeEmoji;
+		private static ulong _supportEmoji;
 
-		private const ulong CurseForgeEmoji = 856963013809537065;
-		private const ulong SupportEmoji = 873401541032304671;
-
-		private const int CurseForgeProjectId = 496522;
-		private const string CurseForgeProjectSlug = "pswg";
+		private static int _curseForgeProjectId;
+		private static string _curseForgeProjectSlug;
 
 		internal static readonly ManualResetEventSlim ExitHandle = new();
 		private static readonly HttpClient Web = new();
 
-		private static string _discordToken;
 		private static Timer _taskScheduler15;
 
 		private static DiscordClient _discord;
@@ -56,12 +57,37 @@ namespace DiscordPBot
 		private static AtomicLogger _alog;
 
 		private static LiteDatabase _db;
+		
 		public static ILiteCollection<CurseForgeFiles> CfFileCollection { get; private set; }
+		public static ulong OwnerId => _ownerId;
 
 		private static void LoadEnv()
 		{
 			Env.Load();
+			_appName = Env.GetString("APP_NAME");
+			
 			_discordToken = Env.GetString("DISCORD_TOKEN");
+			
+			_ownerId = EnvGetUlong("OWNER_ID");
+			_guild = EnvGetUlong("MANAGED_GUILD");
+			
+			_curseForgeProjectId = Env.GetInt("CURSEFORGE_PROJECT_ID");
+			_curseForgeProjectSlug = Env.GetString("CURSEFORGE_PROJECT_SLUG");
+			
+			_managementChannel = EnvGetUlong("MANAGEMENT_CHANNEL");
+			_downloadAnnouncementChannel = EnvGetUlong("DOWNLOAD_ANNOUNCEMENT_CHANNEL");
+			_generalChannel = EnvGetUlong("GENERAL_CHANNEL");
+			_suggestionsChannel = EnvGetUlong("SUGGESTIONS_CHANNEL");
+			_bugsChannel = EnvGetUlong("BUGS_CHANNEL");
+			_supportChannel = EnvGetUlong("SUPPORT_CHANNEL");
+			
+			_curseForgeEmoji = EnvGetUlong("CURSEFORGE_EMOJI");
+			_supportEmoji = EnvGetUlong("SUPPORT_EMOJI");
+		}
+
+		private static ulong EnvGetUlong(string key, string fallback = null)
+		{
+			return ulong.Parse(Env.GetString(key, fallback));
 		}
 
 		private static async Task<DiscordGuild> GetDevGuild() => await _discord.GetGuildAsync(490628666884358147);
@@ -110,17 +136,18 @@ namespace DiscordPBot
 			_discord = new DiscordClient(new DiscordConfiguration
 			{
 				Token = _discordToken,
-				TokenType = TokenType.Bot
+				TokenType = TokenType.Bot,
+				Intents = DiscordIntents.AllUnprivileged | DiscordIntents.GuildMembers
 			});
 
 			await _discord.ConnectAsync();
 
-			EventLogger.AttachEventLogger(_alog, _discord, Guild);
+			EventLogger.AttachEventLogger(_alog, _discord, _guild);
 
 			_discord.ClientErrored += OnClientError;
 			_discord.MessageCreated += OnMessageCreated;
 
-			var commands = _discord.UseCommandsNext(new CommandsNextConfiguration()
+			var commands = _discord.UseCommandsNext(new CommandsNextConfiguration
 			{
 				StringPrefixes = new[] { "!p ", $"<@{_discord.CurrentUser.Id}> ", $"<@!{_discord.CurrentUser.Id}> " },
 			});
@@ -129,7 +156,7 @@ namespace DiscordPBot
 			commands.RegisterCommands<CurseForgeModule>();
 			commands.RegisterCommands<RoleModule>();
 
-			_discord.Logger.Log(LogLevel.Information, $"{AppName} running");
+			_discord.Logger.Log(LogLevel.Information, $"{_appName} running");
 
 			ScheduleTasks();
 
@@ -281,7 +308,7 @@ namespace DiscordPBot
 
 		public static async Task RefreshCurseFiles()
 		{
-			var curseFilesResponse = await Web.GetStringAsync($"https://addons-ecs.forgesvc.net/api/v2/addon/{CurseForgeProjectId}/files");
+			var curseFilesResponse = await Web.GetStringAsync($"https://addons-ecs.forgesvc.net/api/v2/addon/{_curseForgeProjectId}/files");
 			var files = JsonConvert.DeserializeObject<CurseForgeFiles[]>(curseFilesResponse);
 
 			if (files == null)
@@ -292,19 +319,16 @@ namespace DiscordPBot
 
 			var file = files.OrderByDescending(f => f.Id).First();
 
-			var curseChangelogResponse = await Web.GetStringAsync($"https://addons-ecs.forgesvc.net/api/v2/addon/{CurseForgeProjectId}/file/{file.Id}/changelog");
+			var curseChangelogResponse = await Web.GetStringAsync($"https://addons-ecs.forgesvc.net/api/v2/addon/{_curseForgeProjectId}/file/{file.Id}/changelog");
 
 			if (CfFileCollection.Count() > 0 && CfFileCollection.Exists(f => f.Id == file.Id))
 				return;
 
-			CfFileCollection.Insert(file);
-			_db.Checkpoint();
-
 			var managedGuild = await GetManagedGuild();
 
-			var curseEmoji = await managedGuild.GetEmojiAsync(CurseForgeEmoji);
-			var supportEmoji = await managedGuild.GetEmojiAsync(SupportEmoji);
-			var downloadChannel = managedGuild.GetChannel(DownloadAnnouncementChannel);
+			var curseEmoji = await managedGuild.GetEmojiAsync(_curseForgeEmoji);
+			var supportEmoji = await managedGuild.GetEmojiAsync(_supportEmoji);
+			var downloadChannel = managedGuild.GetChannel(_downloadAnnouncementChannel);
 
 			var doc = new XmlDocument();
 			doc.LoadXml($"<changelog>{curseChangelogResponse}</changelog>");
@@ -322,14 +346,17 @@ namespace DiscordPBot
 					.WithTitle(file.DisplayName)
 					.WithTimestamp(file.FileDate)
 					.WithColor(new DiscordColor(0xFFD400))
-					.AddField($"Download on {curseEmoji} CurseForge", $"https://www.curseforge.com/minecraft/mc-mods/{CurseForgeProjectSlug}/files/{file.Id}")
-					.AddField($":speech_balloon: Feedback", MentionChannel(GeneralChannel), true)
-					.AddField($":beetle: Report Bugs", MentionChannel(BugsChannel), true)
-					.AddField($":bulb: Suggestions", MentionChannel(SuggestionsChannel), true)
-					.AddField($"Support {supportEmoji}", $"If you'd like to show a token of your appreciation, consider checking out the rewards in {MentionChannel(SupportChannel)}!")
+					.AddField($"Download on {curseEmoji} CurseForge", $"https://www.curseforge.com/minecraft/mc-mods/{_curseForgeProjectSlug}/files/{file.Id}")
+					.AddField($":speech_balloon: Feedback", MentionChannel(_generalChannel), true)
+					.AddField($":beetle: Report Bugs", MentionChannel(_bugsChannel), true)
+					.AddField($":bulb: Suggestions", MentionChannel(_suggestionsChannel), true)
+					.AddField($"Support {supportEmoji}", $"If you'd like to show a token of your appreciation, consider checking out the rewards in {MentionChannel(_supportChannel)}!")
 					.Build())
 				.AddEmbed(changelogEmbed.Build())
 			);
+			
+			CfFileCollection.Insert(file);
+			_db.Checkpoint();
 
 			await downloadChannel.CrosspostMessageAsync(message);
 
@@ -353,11 +380,11 @@ namespace DiscordPBot
 			await message.SendAsync(managementChannel);
 		}
 
-		private static async Task<DiscordGuild> GetManagedGuild() => await _discord.GetGuildAsync(Guild);
+		private static async Task<DiscordGuild> GetManagedGuild() => await _discord.GetGuildAsync(_guild);
 
-		private static async Task<DiscordChannel> GetManagementChannel() => (await GetManagedGuild()).GetChannel(ManagementChannel);
+		private static async Task<DiscordChannel> GetManagementChannel() => (await GetManagedGuild()).GetChannel(_managementChannel);
 
-		private static async Task<DiscordChannel> GetDownloadsChannel() => (await GetManagedGuild()).GetChannel(DownloadAnnouncementChannel);
+		private static async Task<DiscordChannel> GetDownloadsChannel() => (await GetManagedGuild()).GetChannel(_downloadAnnouncementChannel);
 
 		private static async Task OnClientError(DiscordClient sender, ClientErrorEventArgs e)
 		{

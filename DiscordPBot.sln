@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DiscordPBot", "DiscordPBot\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BitLog", "BitLog\BitLog.csproj", "{D4D01D77-3C70-4CBC-940B-B51C81FE718B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sandbox", "Sandbox\Sandbox.csproj", "{B186F155-7ACD-4289-B6CD-B19C21F58B07}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{D4D01D77-3C70-4CBC-940B-B51C81FE718B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D4D01D77-3C70-4CBC-940B-B51C81FE718B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D4D01D77-3C70-4CBC-940B-B51C81FE718B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B186F155-7ACD-4289-B6CD-B19C21F58B07}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B186F155-7ACD-4289-B6CD-B19C21F58B07}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B186F155-7ACD-4289-B6CD-B19C21F58B07}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B186F155-7ACD-4289-B6CD-B19C21F58B07}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
