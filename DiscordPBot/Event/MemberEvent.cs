@@ -1,14 +1,15 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace DiscordPBot.Event;
-
-[StructLayout(LayoutKind.Sequential, Pack = 1)]
-public struct MemberEvent
+namespace DiscordPBot.Event
 {
-	public readonly ulong MemberId;
-
-	public MemberEvent(ulong memberId)
+	[StructLayout(LayoutKind.Sequential, Pack = 1)]
+	public struct MemberEvent
 	{
-		MemberId = memberId;
+		public readonly ulong MemberId;
+
+		public MemberEvent(ulong memberId)
+		{
+			MemberId = memberId;
+		}
 	}
 }

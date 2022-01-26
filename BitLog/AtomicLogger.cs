@@ -1,32 +1,36 @@
-﻿using System.Security.AccessControl;
+﻿using System;
+using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace BitLog;
-
-public class AtomicLogger : IDisposable
+namespace BitLog
 {
-	private readonly FileStream _stream;
-
-	public AtomicLogger(string filename, int bufferSize = 4096)
+	public class AtomicLogger : IDisposable
 	{
-		_stream = new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize, FileOptions.WriteThrough | FileOptions.Asynchronous);
-	}
+		private readonly FileStream _stream;
 
-	public async Task WriteDataAsync(byte[] data, CancellationToken token)
-	{
-		await _stream.WriteAsync(data, token);
-		await _stream.FlushAsync(token);
-	}
+		public AtomicLogger(string filename, int bufferSize = 4096)
+		{
+			_stream = new FileStream(filename, FileMode.Append, FileAccess.Write, FileShare.None, bufferSize, FileOptions.WriteThrough | FileOptions.Asynchronous);
+		}
 
-	protected virtual void Dispose(bool disposing)
-	{
-		if (disposing) 
-			_stream.Dispose();
-	}
+		public async Task WriteDataAsync(byte[] data, CancellationToken token)
+		{
+			await _stream.WriteAsync(data, token);
+			await _stream.FlushAsync(token);
+		}
 
-	/// <inheritdoc />
-	public void Dispose()
-	{
-		Dispose(true);
-		GC.SuppressFinalize(this);
+		protected virtual void Dispose(bool disposing)
+		{
+			if (disposing) 
+				_stream.Dispose();
+		}
+
+		/// <inheritdoc />
+		public void Dispose()
+		{
+			Dispose(true);
+			GC.SuppressFinalize(this);
+		}
 	}
 }
