@@ -20,13 +20,12 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 
 namespace DiscordPBot
-
 {
 	internal record FieldPrototype(string Header, string Value);
 
 	internal static class PBot
 	{
-		private const bool Production = false;
+		private const bool Production = true;
 
 		private const string AppName = "PBot";
 
