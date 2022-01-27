@@ -51,7 +51,34 @@ namespace DiscordPBot.Event
 
 			discord.MessageCreated += async (_, args) =>
 			{
-				if (args.Guild.Id == guildId && !args.Author.IsBot) await LogEvent(log, EventId.MemberSpoke, new MemberChannelEvent(args.Author.Id, args.Channel.Id));
+				if (args.Guild.Id == guildId && !args.Author.IsBot)
+				{
+					switch (args.Message.MessageType)
+					{
+						case MessageType.Default:
+						case MessageType.Reply:
+							await LogEvent(log, EventId.MemberSpoke, new MemberChannelEvent(args.Author.Id, args.Channel.Id));
+							break;
+						case MessageType.ChannelPinnedMessage:
+							await LogEvent(log, EventId.MessagePinned, new MemberChannelEvent(args.Author.Id, args.Channel.Id));
+							break;
+						case MessageType.UserPremiumGuildSubscription:
+							await LogEvent(log, EventId.NitroBoost, new MemberEvent(args.Author.Id));
+							break;
+						case MessageType.TierOneUserPremiumGuildSubscription:
+							await LogEvent(log, EventId.NitroBoostObtainTier1, new MemberEvent(args.Author.Id));
+							break;
+						case MessageType.TierTwoUserPremiumGuildSubscription:
+							await LogEvent(log, EventId.NitroBoostObtainTier2, new MemberEvent(args.Author.Id));
+							break;
+						case MessageType.TierThreeUserPremiumGuildSubscription:
+							await LogEvent(log, EventId.NitroBoostObtainTier3, new MemberEvent(args.Author.Id));
+							break;
+						case MessageType.ApplicationCommand:
+							await LogEvent(log, EventId.MemberUsedCommand, new MemberChannelEvent(args.Author.Id, args.Channel.Id));
+							break;
+					}
+				}
 			};
 
 			discord.MessageReactionAdded += async (_, args) =>
@@ -118,6 +145,10 @@ namespace DiscordPBot.Event
 					case EventId.MemberSpoke:
 					case EventId.MemberBanned:
 					case EventId.MemberPassedScreening:
+					case EventId.NitroBoost:
+					case EventId.NitroBoostObtainTier1:
+					case EventId.NitroBoostObtainTier2:
+					case EventId.NitroBoostObtainTier3:
 					{
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberEvent>(br)));
 						break;
@@ -132,6 +163,8 @@ namespace DiscordPBot.Event
 					case EventId.MemberLeaveVoice:
 					case EventId.InviteCreated:
 					case EventId.InviteDeleted:
+					case EventId.MessagePinned:
+					case EventId.MemberUsedCommand:
 					{
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberChannelEvent>(br)));
 						break;
@@ -140,6 +173,12 @@ namespace DiscordPBot.Event
 					case EventId.MemberRemoveRole:
 					{
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberRoleEvent>(br)));
+						break;
+					}
+					case EventId.SyncMemberCount:
+					case EventId.SyncBoostCount:
+					{
+						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<IntegerEvent>(br)));
 						break;
 					}
 					default:
@@ -164,7 +203,7 @@ namespace DiscordPBot.Event
 			return MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateSpan(ref data, 1));
 		}
 
-		private static async Task LogEvent<T>(AtomicLogger log, EventId id, T e, DateTime? time = null) where T : struct
+		public static async Task LogEvent<T>(AtomicLogger log, EventId id, T e, DateTime? time = null) where T : struct
 		{
 			var payloadData = GetEventBytes(time ?? DateTime.UtcNow, id, e);
 			await log.WriteDataAsync(payloadData, CancellationToken.None);

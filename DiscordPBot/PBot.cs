@@ -18,6 +18,7 @@ using DSharpPlus.EventArgs;
 using LiteDB;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using EventId = DiscordPBot.Event.EventId;
 
 namespace DiscordPBot
 {
@@ -50,7 +51,8 @@ namespace DiscordPBot
 		internal static readonly ManualResetEventSlim ExitHandle = new();
 		private static readonly HttpClient Web = new();
 
-		private static Timer _taskScheduler15;
+		private static Timer _taskScheduler24Hr;
+		private static Timer _taskScheduler15Min;
 
 		private static DiscordClient _discord;
 
@@ -89,9 +91,6 @@ namespace DiscordPBot
 		{
 			return ulong.Parse(Env.GetString(key, fallback));
 		}
-
-		private static async Task<DiscordGuild> GetDevGuild() => await _discord.GetGuildAsync(490628666884358147);
-		private static async Task<DiscordChannel> GetDevChannel() => (await GetDevGuild()).GetChannel(776847429454266399);
 
 		private static void Main(string[] args)
 		{
@@ -287,10 +286,20 @@ namespace DiscordPBot
 
 		private static void ScheduleTasks()
 		{
-			_taskScheduler15 = new Timer(ScheduledTask15, null, TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(15));
+			_taskScheduler24Hr = new Timer(ScheduledTask24Hr, null, TimeSpan.FromSeconds(4), TimeSpan.FromHours(24));
+			_taskScheduler15Min = new Timer(ScheduledTask15Min, null, TimeSpan.FromSeconds(5), TimeSpan.FromMinutes(15));
 		}
 
-		private static async void ScheduledTask15(object state)
+		private static async void ScheduledTask24Hr(object state)
+		{
+			var guild = await GetManagedGuild();
+			var time = DateTime.UtcNow;
+			
+			await EventLogger.LogEvent(_alog, EventId.SyncMemberCount, new IntegerEvent(guild.MemberCount), time);
+			await EventLogger.LogEvent(_alog, EventId.SyncBoostCount, new IntegerEvent(guild.PremiumSubscriptionCount ?? 0), time);
+		}
+
+		private static async void ScheduledTask15Min(object state)
 		{
 			if (Production)
 			{

@@ -15,5 +15,13 @@
 		MemberAddRole = 11,
 		MemberRemoveRole = 12,
 		MemberPassedScreening = 13,
+		MessagePinned = 14,
+		NitroBoost = 15,
+		NitroBoostObtainTier1 = 16,
+		NitroBoostObtainTier2 = 17,
+		NitroBoostObtainTier3 = 18,
+		MemberUsedCommand = 19,
+		SyncMemberCount = 20,
+		SyncBoostCount = 21
 	}
 }
