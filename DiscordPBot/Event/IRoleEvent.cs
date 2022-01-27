@@ -1,6 +1,7 @@
-﻿namespace DiscordPBot.Event;
-
-public interface IRoleEvent
+﻿namespace DiscordPBot.Event
 {
-	ulong RoleId { get; }
+	public interface IRoleEvent
+	{
+		ulong RoleId { get; }
+	}
 }

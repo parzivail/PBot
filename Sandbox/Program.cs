@@ -30,7 +30,7 @@ namespace Sandbox
 				int codepoint = c;
 				if (lastHighSurrogate > 0)
 				{
-					entityList.Add((65536 + (lastHighSurrogate - startHighSurrogate << 10) + (codepoint - endHighSurrogate - 1)).ToString("x"));
+					entityList.Add((0xFFFF + (lastHighSurrogate - startHighSurrogate << 10) + (codepoint - endHighSurrogate)).ToString("x"));
 					lastHighSurrogate = 0;
 				}
 				else if (codepoint is >= startHighSurrogate and <= endHighSurrogate)
