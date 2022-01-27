@@ -11,4 +11,10 @@
       <ProjectReference Include="..\DiscordPBot\DiscordPBot.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <None Update="emoji_surrogate_to_filename_table.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

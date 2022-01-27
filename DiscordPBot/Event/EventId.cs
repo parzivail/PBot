@@ -12,5 +12,8 @@
 		MemberBanned = 8,
 		InviteCreated = 9,
 		InviteDeleted = 10,
+		MemberAddRole = 11,
+		MemberRemoveRole = 12,
+		MemberPassedScreening = 13,
 	}
 }

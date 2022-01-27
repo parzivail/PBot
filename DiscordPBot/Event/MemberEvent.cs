@@ -3,9 +3,10 @@
 namespace DiscordPBot.Event
 {
 	[StructLayout(LayoutKind.Sequential, Pack = 1)]
-	public struct MemberEvent
+	public struct MemberEvent : IMemberEvent
 	{
-		public readonly ulong MemberId;
+		/// <inheritdoc />
+		public ulong MemberId { get; }
 
 		public MemberEvent(ulong memberId)
 		{

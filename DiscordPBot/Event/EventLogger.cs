@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -28,36 +29,58 @@ namespace DiscordPBot.Event
 				if (args.Guild.Id == guildId && !args.Member.IsBot) await LogEvent(log, EventId.MemberRemoved, new MemberEvent(args.Member.Id));
 			};
 
+			discord.GuildMemberUpdated += async (_, args) =>
+			{
+				if (args.Guild.Id != guildId || args.Member.IsBot)
+					return;
+				
+				var time = DateTime.UtcNow;
+
+				var srcRoles = args.RolesBefore.Select(role => role.Id).ToHashSet();
+				var destRoles = args.RolesAfter.Select(role => role.Id).ToHashSet();
+
+				var gainedRoles = new HashSet<ulong>(destRoles.Except(srcRoles));
+				var lostRoles = new HashSet<ulong>(srcRoles.Except(destRoles));
+
+				foreach (var gainedRole in gainedRoles)
+					await LogEvent(log, EventId.MemberAddRole, new MemberRoleEvent(args.Member.Id, gainedRole), time);
+				
+				foreach (var lostRole in lostRoles)
+					await LogEvent(log, EventId.MemberRemoveRole, new MemberRoleEvent(args.Member.Id, lostRole), time);
+			};
+
 			discord.MessageCreated += async (_, args) =>
 			{
-				if (args.Guild.Id == guildId && !args.Author.IsBot) await LogEvent(log, EventId.MemberSpoke, new MemberEvent(args.Author.Id));
+				if (args.Guild.Id == guildId && !args.Author.IsBot) await LogEvent(log, EventId.MemberSpoke, new MemberChannelEvent(args.Author.Id, args.Channel.Id));
 			};
 
 			discord.MessageReactionAdded += async (_, args) =>
 			{
 				if (args.Guild.Id == guildId && !args.User.IsBot)
-					await LogEvent(log, EventId.ReactionAdded, new MemberChannelMessageEmojiEvent(args.User.Id, args.Channel.Id, args.Message.Id, GetEmojiId(args.Emoji)));
+					await LogEvent(log, EventId.ReactionAdded, new MemberChannelMessageEmojiEvent(args.User.Id, args.Channel.Id, args.Message.Id, EventEmojiUtil.GetEmojiId(args.Emoji)));
 			};
 
 			discord.MessageReactionRemoved += async (_, args) =>
 			{
 				if (args.Guild.Id == guildId && !args.User.IsBot)
-					await LogEvent(log, EventId.ReactionRemoved, new MemberChannelMessageEmojiEvent(args.User.Id, args.Channel.Id, args.Message.Id, GetEmojiId(args.Emoji)));
+					await LogEvent(log, EventId.ReactionRemoved, new MemberChannelMessageEmojiEvent(args.User.Id, args.Channel.Id, args.Message.Id, EventEmojiUtil.GetEmojiId(args.Emoji)));
 			};
 
 			discord.VoiceStateUpdated += async (_, args) =>
 			{
-				if (args.Guild.Id == guildId && !args.User.IsBot)
+				if (args.Guild.Id != guildId || args.User.IsBot)
+					return;
+
+				var time = DateTime.UtcNow;
+
+				if (args.Before?.Channel == null && args.After?.Channel != null)
+					await LogEvent(log, EventId.MemberJoinVoice, new MemberChannelEvent(args.User.Id, args.After.Channel.Id), time);
+				else if (args.Before?.Channel != null && args.After?.Channel == null)
+					await LogEvent(log, EventId.MemberLeaveVoice, new MemberChannelEvent(args.User.Id, args.Before.Channel.Id), time);
+				else if (args.Before?.Channel != null && args.After?.Channel != null && args.Before.Channel.Id != args.After.Channel.Id)
 				{
-					if (args.Before?.Channel == null && args.After?.Channel != null)
-						await LogEvent(log, EventId.MemberJoinVoice, new MemberChannelEvent(args.User.Id, args.After.Channel.Id));
-					else if (args.Before?.Channel != null && args.After?.Channel == null)
-						await LogEvent(log, EventId.MemberLeaveVoice, new MemberChannelEvent(args.User.Id, args.Before.Channel.Id));
-					else if (args.Before?.Channel != null && args.After?.Channel != null && args.Before.Channel.Id != args.After.Channel.Id)
-					{
-						await LogEvent(log, EventId.MemberLeaveVoice, new MemberChannelEvent(args.User.Id, args.Before.Channel.Id));
-						await LogEvent(log, EventId.MemberJoinVoice, new MemberChannelEvent(args.User.Id, args.After.Channel.Id));
-					}
+					await LogEvent(log, EventId.MemberLeaveVoice, new MemberChannelEvent(args.User.Id, args.Before.Channel.Id), time);
+					await LogEvent(log, EventId.MemberJoinVoice, new MemberChannelEvent(args.User.Id, args.After.Channel.Id), time);
 				}
 			};
 
@@ -94,6 +117,7 @@ namespace DiscordPBot.Event
 					case EventId.MemberRemoved:
 					case EventId.MemberSpoke:
 					case EventId.MemberBanned:
+					case EventId.MemberPassedScreening:
 					{
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberEvent>(br)));
 						break;
@@ -110,6 +134,12 @@ namespace DiscordPBot.Event
 					case EventId.InviteDeleted:
 					{
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberChannelEvent>(br)));
+						break;
+					}
+					case EventId.MemberAddRole:
+					case EventId.MemberRemoveRole:
+					{
+						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberRoleEvent>(br)));
 						break;
 					}
 					default:
@@ -134,31 +164,9 @@ namespace DiscordPBot.Event
 			return MemoryMarshal.Cast<T, byte>(MemoryMarshal.CreateSpan(ref data, 1));
 		}
 
-		private static ulong GetEmojiId(DiscordEmoji emoji)
+		private static async Task LogEvent<T>(AtomicLogger log, EventId id, T e, DateTime? time = null) where T : struct
 		{
-			return emoji.Id != 0 ? emoji.Id : HashEmojiName(emoji.Name);
-		}
-
-		private static ulong HashEmojiName(string name)
-		{
-			return 0xFF00000000000000 | (HashFnv1A(name, 7837703) << 32) | HashFnv1A(name, 16777619);
-		}
-
-		private static ulong HashFnv1A(string value, uint d)
-		{
-			var hash = 2166136261u;
-			foreach (var t in value)
-			{
-				hash ^= t;
-				hash *= d;
-			}
-
-			return hash;
-		}
-
-		private static async Task LogEvent<T>(AtomicLogger log, EventId id, T e) where T : struct
-		{
-			var payloadData = GetEventBytes(DateTime.UtcNow, id, e);
+			var payloadData = GetEventBytes(time ?? DateTime.UtcNow, id, e);
 			await log.WriteDataAsync(payloadData, CancellationToken.None);
 		}
 
