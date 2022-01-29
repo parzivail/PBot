@@ -142,7 +142,6 @@ namespace DiscordPBot.Event
 				{
 					case EventId.MemberAdded:
 					case EventId.MemberRemoved:
-					case EventId.MemberSpoke:
 					case EventId.MemberBanned:
 					case EventId.MemberPassedScreening:
 					case EventId.NitroBoost:
@@ -159,6 +158,7 @@ namespace DiscordPBot.Event
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberChannelMessageEmojiEvent>(br)));
 						break;
 					}
+					case EventId.MemberSpoke:
 					case EventId.MemberJoinVoice:
 					case EventId.MemberLeaveVoice:
 					case EventId.InviteCreated:
@@ -182,7 +182,7 @@ namespace DiscordPBot.Event
 						break;
 					}
 					default:
-						throw new ArgumentOutOfRangeException(nameof(eventId), eventId, null);
+						throw new ArgumentOutOfRangeException();
 				}
 			}
 

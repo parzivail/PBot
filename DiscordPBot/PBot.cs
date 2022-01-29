@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Web;
 using System.Xml;
 using BitLog;
 using DiscordPBot.Event;
@@ -347,7 +348,9 @@ namespace DiscordPBot
 			var fieldPrototypes = CreateEmbed(doc["changelog"].ChildNodes);
 
 			foreach (var (header, value) in fieldPrototypes)
-				changelogEmbed.AddField(header ?? "", value);
+			{
+				changelogEmbed.AddField(HttpUtility.HtmlDecode(header ?? ""), HttpUtility.HtmlDecode(value));
+			}
 
 			var message = await downloadChannel.SendMessageAsync(builder => builder
 				.WithContent("@everyone A new PSWG version has been released!")
