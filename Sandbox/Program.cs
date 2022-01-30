@@ -97,9 +97,13 @@ namespace Sandbox
 
 					if (builtIn)
 					{
-						var surrogate = emojiHashToSurrogateTable[emojiId];
-						var filename = emojiSurrogateToFilenameTable[StringToEntityList(surrogate)];
-						sb.Append($" Emoji=https://discordapp.com/assets/{filename}");
+						if (emojiHashToSurrogateTable.TryGetValue(emojiId, out var surrogate))
+						{
+							var filename = emojiSurrogateToFilenameTable[StringToEntityList(surrogate)];
+							sb.Append($" Emoji=https://discordapp.com/assets/{filename}");
+						}
+						else
+							sb.Append($" Emoji=[Unknown builtin hash: {emojiId}]");
 					}
 					else
 						sb.Append($" Emoji=https://cdn.discordapp.com/emojis/{emojiId}.webp");
