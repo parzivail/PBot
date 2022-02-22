@@ -1,8 +1,9 @@
-﻿namespace DiscordPBot.Event;
-
-public enum MentionEventType : byte
+﻿namespace DiscordPBot.Event
 {
-	Member = 0,
-	Channel = 1,
-	Role = 2
+	public enum MentionEventType : byte
+	{
+		Member = 0,
+		Channel = 1,
+		Role = 2
+	}
 }

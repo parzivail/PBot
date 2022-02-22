@@ -1,7 +1,8 @@
-﻿namespace DiscordPBot.Event;
-
-public interface IMentionEvent
+﻿namespace DiscordPBot.Event
 {
-	MentionEventType MentionType { get; }
-	ulong MentionId { get; }
+	public interface IMentionEvent
+	{
+		MentionEventType MentionType { get; }
+		ulong MentionId { get; }
+	}
 }
