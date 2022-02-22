@@ -12,6 +12,15 @@ using MinecraftCurseForge.NET;
 
 namespace Sandbox
 {
+	public class Histogram<T> : Dictionary<T, int>
+	{
+		public new int this[T key]
+		{
+			get => ContainsKey(key) ? base[key] : 0;
+			set => base[key] = value;
+		}
+	}
+	
 	public class Program
 	{
 		private static string StringToEntityList(string srcString)
@@ -59,7 +68,8 @@ namespace Sandbox
 
 		public static void Main(string[] args)
 		{
-			AsyncMain().ConfigureAwait(false).GetAwaiter().GetResult();
+			// AsyncMain().ConfigureAwait(false).GetAwaiter().GetResult();
+			ParseLogMain(args);
 		}
 
 		public static void ParseLogMain(string[] args)
@@ -72,6 +82,7 @@ namespace Sandbox
 			var emojiHashToSurrogateTable = discordNameLookup.Keys.ToDictionary(EventEmojiUtil.HashEmojiSurrogates);
 
 			var messageCount = 0;
+			
 			var reactionCount = 0;
 			var reAdd = 0;
 			var reRem = 0;
@@ -86,6 +97,11 @@ namespace Sandbox
 
 			var firstEvent = data.Min(e => e.Timestamp);
 
+			var members = new HashSet<ulong>();
+
+			var welcomes = new Histogram<ulong>();
+			var oneMonthAgo = DateTime.UtcNow - TimeSpan.FromDays(30);
+			
 			foreach (var (id, timestamp, payload) in data)
 			{
 				sb.Clear();
@@ -111,6 +127,9 @@ namespace Sandbox
 				if (payload is IRoleEvent roleEvent)
 					sb.Append($" Role={roleEvent.RoleId}");
 
+				if (payload is IMentionEvent mention)
+					sb.Append($" Mention=[{mention.MentionType}: {mention.MentionId}]");
+
 				if (payload is IEmojiEvent emojiEvent)
 				{
 					var (builtIn, emojiId) = EventEmojiUtil.UnpackEmoji(emojiEvent.EmojiId);
@@ -134,6 +153,8 @@ namespace Sandbox
 					case EventId.MemberAdded:
 						memberCount++;
 						joins++;
+						if (timestamp > oneMonthAgo)
+							members.Add(((IMemberEvent)payload).MemberId);
 						break;
 					case EventId.MemberRemoved:
 						memberCount--;
@@ -153,6 +174,13 @@ namespace Sandbox
 						reactionCount--;
 						reRem++;
 						break;
+					case EventId.MemberMentioned:
+						if (members.Contains(((IMentionEvent)payload).MentionId))
+						{
+							welcomes[((IMemberEvent)payload).MemberId]++;
+							members.Remove(((IMentionEvent)payload).MentionId);
+						}
+						break;
 				}
 
 				Console.WriteLine(sb.ToString());
@@ -161,6 +189,12 @@ namespace Sandbox
 			Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
 			Console.WriteLine($"Total reactions: {reactionCount} (+{reAdd}, -{reRem})");
 			Console.WriteLine($"Total messages: {messageCount}");
+			
+			Console.WriteLine();
+
+			Console.WriteLine("Welcome Leaderboard");
+			foreach (var (userId, numWelcomes) in welcomes.OrderByDescending(pair => pair.Value)) 
+				Console.WriteLine($"{userId}: {numWelcomes}");
 		}
 	}
 }
