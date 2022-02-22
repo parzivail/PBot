@@ -22,6 +22,9 @@
 		NitroBoostObtainTier3 = 18,
 		MemberUsedCommand = 19,
 		SyncMemberCount = 20,
-		SyncBoostCount = 21
+		SyncBoostCount = 21,
+		MemberMentioned = 22,
+		ChannelMentioned = 23,
+		RoleMentioned = 24,
 	}
 }

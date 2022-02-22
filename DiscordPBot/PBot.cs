@@ -18,6 +18,7 @@ using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using LiteDB;
 using Microsoft.Extensions.Logging;
+using MinecraftCurseForge.NET;
 using Newtonsoft.Json;
 using EventId = DiscordPBot.Event.EventId;
 
@@ -46,22 +47,23 @@ namespace DiscordPBot
 		private static ulong _curseForgeEmoji;
 		private static ulong _supportEmoji;
 
+		private static string _curseForgeApiKey;
 		private static int _curseForgeProjectId;
 		private static string _curseForgeProjectSlug;
 
 		internal static readonly ManualResetEventSlim ExitHandle = new();
-		private static readonly HttpClient Web = new();
 
 		private static Timer _taskScheduler24Hr;
 		private static Timer _taskScheduler15Min;
 
+		private static CurseForgeApi _curseForgeApi;
 		private static DiscordClient _discord;
 
 		private static AtomicLogger _alog;
 
 		private static LiteDatabase _db;
 		
-		public static ILiteCollection<CurseForgeFiles> CfFileCollection { get; private set; }
+		public static ILiteCollection<CurseForgeFileDatabaseEntry> CfFileCollection { get; private set; }
 		public static ulong OwnerId => _ownerId;
 
 		private static void LoadEnv()
@@ -74,6 +76,7 @@ namespace DiscordPBot
 			_ownerId = EnvGetUlong("OWNER_ID");
 			_guild = EnvGetUlong("MANAGED_GUILD");
 			
+			_curseForgeApiKey = Env.GetString("CURSEFORGE_API_KEY");
 			_curseForgeProjectId = Env.GetInt("CURSEFORGE_PROJECT_ID");
 			_curseForgeProjectSlug = Env.GetString("CURSEFORGE_PROJECT_SLUG");
 			
@@ -102,7 +105,7 @@ namespace DiscordPBot
 				_db.CheckpointSize = 0;
 				_db.Checkpoint();
 
-				CfFileCollection = _db.GetCollection<CurseForgeFiles>("cf_files");
+				CfFileCollection = _db.GetCollection<CurseForgeFileDatabaseEntry>("cf_files");
 				CfFileCollection.EnsureIndex(file => file.Id);
 
 				try
@@ -157,6 +160,8 @@ namespace DiscordPBot
 			commands.RegisterCommands<RoleModule>();
 
 			_discord.Logger.Log(LogLevel.Information, $"{_appName} running");
+
+			_curseForgeApi = new CurseForgeApi(_curseForgeApiKey);
 
 			ScheduleTasks();
 
@@ -318,8 +323,17 @@ namespace DiscordPBot
 
 		public static async Task RefreshCurseFiles()
 		{
-			var curseFilesResponse = await Web.GetStringAsync($"https://addons-ecs.forgesvc.net/api/v2/addon/{_curseForgeProjectId}/files");
-			var files = JsonConvert.DeserializeObject<CurseForgeFiles[]>(curseFilesResponse);
+			CurseForgeFilesResponse files;
+
+			try
+			{
+				files = await _curseForgeApi.GetModFiles(_curseForgeProjectId);
+			}
+			catch (Exception e)
+			{
+				SendToManagement(new DiscordMessageBuilder().WithContent($":x: Unable to deserialize CurseForge API response: {e.Message}"));
+				return;
+			}
 
 			if (files == null)
 			{
@@ -327,9 +341,9 @@ namespace DiscordPBot
 				return;
 			}
 
-			var file = files.OrderByDescending(f => f.Id).First();
+			var file = files.Files.OrderByDescending(f => f.Id).First();
 
-			var curseChangelogResponse = await Web.GetStringAsync($"https://addons-ecs.forgesvc.net/api/v2/addon/{_curseForgeProjectId}/file/{file.Id}/changelog");
+			var curseChangelogResponse = await _curseForgeApi.GetModFileChangelog(_curseForgeProjectId, file.Id);
 
 			if (CfFileCollection.Count() > 0 && CfFileCollection.Exists(f => f.Id == file.Id))
 				return;
@@ -367,7 +381,13 @@ namespace DiscordPBot
 				.AddEmbed(changelogEmbed.Build())
 			);
 			
-			CfFileCollection.Insert(file);
+			CfFileCollection.Insert(new CurseForgeFileDatabaseEntry
+			{
+				Id = file.Id,
+				DisplayName = file.DisplayName,
+				FileDate = file.FileDate,
+				FileName = file.FileName
+			});
 			_db.Checkpoint();
 
 			await downloadChannel.CrosspostMessageAsync(message);

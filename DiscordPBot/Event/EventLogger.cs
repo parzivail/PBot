@@ -13,8 +13,6 @@ using DSharpPlus.Entities;
 
 namespace DiscordPBot.Event
 {
-	public record LoggedEvent(EventId Id, DateTime Timestamp, object Data);
-
 	public static class EventLogger
 	{
 		public static void AttachEventLogger(AtomicLogger log, DiscordClient discord, ulong guildId)
@@ -53,31 +51,42 @@ namespace DiscordPBot.Event
 			{
 				if (args.Guild.Id == guildId && !args.Author.IsBot)
 				{
+					var time = DateTime.UtcNow;
+					
 					switch (args.Message.MessageType)
 					{
 						case MessageType.Default:
 						case MessageType.Reply:
-							await LogEvent(log, EventId.MemberSpoke, new MemberChannelEvent(args.Author.Id, args.Channel.Id));
+							await LogEvent(log, EventId.MemberSpoke, new MemberChannelEvent(args.Author.Id, args.Channel.Id), time);
 							break;
 						case MessageType.ChannelPinnedMessage:
-							await LogEvent(log, EventId.MessagePinned, new MemberChannelEvent(args.Author.Id, args.Channel.Id));
+							await LogEvent(log, EventId.MessagePinned, new MemberChannelEvent(args.Author.Id, args.Channel.Id), time);
 							break;
 						case MessageType.UserPremiumGuildSubscription:
-							await LogEvent(log, EventId.NitroBoost, new MemberEvent(args.Author.Id));
+							await LogEvent(log, EventId.NitroBoost, new MemberEvent(args.Author.Id), time);
 							break;
 						case MessageType.TierOneUserPremiumGuildSubscription:
-							await LogEvent(log, EventId.NitroBoostObtainTier1, new MemberEvent(args.Author.Id));
+							await LogEvent(log, EventId.NitroBoostObtainTier1, new MemberEvent(args.Author.Id), time);
 							break;
 						case MessageType.TierTwoUserPremiumGuildSubscription:
-							await LogEvent(log, EventId.NitroBoostObtainTier2, new MemberEvent(args.Author.Id));
+							await LogEvent(log, EventId.NitroBoostObtainTier2, new MemberEvent(args.Author.Id), time);
 							break;
 						case MessageType.TierThreeUserPremiumGuildSubscription:
-							await LogEvent(log, EventId.NitroBoostObtainTier3, new MemberEvent(args.Author.Id));
+							await LogEvent(log, EventId.NitroBoostObtainTier3, new MemberEvent(args.Author.Id), time);
 							break;
 						case MessageType.ApplicationCommand:
-							await LogEvent(log, EventId.MemberUsedCommand, new MemberChannelEvent(args.Author.Id, args.Channel.Id));
+							await LogEvent(log, EventId.MemberUsedCommand, new MemberChannelEvent(args.Author.Id, args.Channel.Id), time);
 							break;
 					}
+
+					foreach (var mention in args.Message.MentionedUsers)
+						await LogEvent(log, EventId.MemberMentioned, new MemberChannelMessageMentionEvent(args.Author.Id, args.Channel.Id, args.Message.Id, MentionEventType.Member, mention.Id), time);
+					
+					foreach (var mention in args.Message.MentionedRoles)
+						await LogEvent(log, EventId.RoleMentioned, new MemberChannelMessageMentionEvent(args.Author.Id, args.Channel.Id, args.Message.Id, MentionEventType.Role, mention.Id), time);
+					
+					foreach (var mention in args.Message.MentionedChannels)
+						await LogEvent(log, EventId.ChannelMentioned, new MemberChannelMessageMentionEvent(args.Author.Id, args.Channel.Id, args.Message.Id, MentionEventType.Channel, mention.Id), time);
 				}
 			};
 
@@ -179,6 +188,13 @@ namespace DiscordPBot.Event
 					case EventId.SyncBoostCount:
 					{
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<IntegerEvent>(br)));
+						break;
+					}
+					case EventId.MemberMentioned:
+					case EventId.ChannelMentioned:
+					case EventId.RoleMentioned:
+					{
+						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberChannelMessageMentionEvent>(br)));
 						break;
 					}
 					default:

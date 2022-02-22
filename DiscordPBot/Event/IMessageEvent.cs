@@ -1,4 +1,6 @@
-﻿namespace DiscordPBot.Event
+﻿using DSharpPlus;
+
+namespace DiscordPBot.Event
 {
 	public interface IMessageEvent
 	{

@@ -5,7 +5,7 @@ using Newtonsoft.Json;
 
 namespace DiscordPBot.Model
 {
-	public class CurseForgeFiles
+	public class CurseForgeFileDatabaseEntry
     {
         [JsonProperty("id"), BsonId(false)]
         public int Id { get; set; }

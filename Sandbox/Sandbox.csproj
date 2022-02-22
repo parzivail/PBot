@@ -9,6 +9,7 @@
     <ItemGroup>
       <ProjectReference Include="..\BitLog\BitLog.csproj" />
       <ProjectReference Include="..\DiscordPBot\DiscordPBot.csproj" />
+      <ProjectReference Include="..\MinecraftCurseForge.NET\MinecraftCurseForge.NET.csproj" />
     </ItemGroup>
 
     <ItemGroup>

@@ -5,8 +5,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
 using DiscordPBot.Event;
 using DSharpPlus.Entities;
+using MinecraftCurseForge.NET;
 
 namespace Sandbox
 {
@@ -42,7 +44,25 @@ namespace Sandbox
 			return string.Join("-", entityList);
 		}
 
+		private static async Task AsyncMain()
+		{
+			var api = new CurseForgeApi("");
+			
+			var mod = await api.GetMod(496522);
+			var modDesc = await api.GetModDescription(496522);
+			var mods = await api.GetMods(496522);
+			var files = await api.GetModFiles(496522);
+			var file = await api.GetModFile(496522, 3655802);
+			var fileChangelog = await api.GetModFileChangelog(496522, 3655802);
+			var fileDownload = await api.GetModFileDownloadUrl(496522, 3655802);
+		}
+
 		public static void Main(string[] args)
+		{
+			AsyncMain().ConfigureAwait(false).GetAwaiter().GetResult();
+		}
+
+		public static void ParseLogMain(string[] args)
 		{
 			var emojiSurrogateToFilenameTable = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText("emoji_surrogate_to_filename_table.json"));
 

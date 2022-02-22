@@ -92,6 +92,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\BitLog\BitLog.csproj" />
+    <ProjectReference Include="..\MinecraftCurseForge.NET\MinecraftCurseForge.NET.csproj" />
   </ItemGroup>
 
   <ItemGroup>
