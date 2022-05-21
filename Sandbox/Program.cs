@@ -20,7 +20,7 @@ namespace Sandbox
 			set => base[key] = value;
 		}
 	}
-	
+
 	public class Program
 	{
 		private static string StringToEntityList(string srcString)
@@ -56,7 +56,7 @@ namespace Sandbox
 		private static async Task AsyncMain()
 		{
 			var api = new CurseForgeApi("");
-			
+
 			var mod = await api.GetMod(496522);
 			var modDesc = await api.GetModDescription(496522);
 			var mods = await api.GetMods(496522);
@@ -82,7 +82,7 @@ namespace Sandbox
 			var emojiHashToSurrogateTable = discordNameLookup.Keys.ToDictionary(EventEmojiUtil.HashEmojiSurrogates);
 
 			var messageCount = 0;
-			
+
 			var reactionCount = 0;
 			var reAdd = 0;
 			var reRem = 0;
@@ -100,8 +100,10 @@ namespace Sandbox
 			var members = new HashSet<ulong>();
 
 			var welcomes = new Histogram<ulong>();
+			var monthJoins = 0;
+			var monthLeaves = 0;
 			var oneMonthAgo = DateTime.UtcNow - TimeSpan.FromDays(30);
-			
+
 			foreach (var (id, timestamp, payload) in data)
 			{
 				sb.Clear();
@@ -138,8 +140,10 @@ namespace Sandbox
 					{
 						if (emojiHashToSurrogateTable.TryGetValue(emojiId, out var surrogate))
 						{
-							var filename = emojiSurrogateToFilenameTable[StringToEntityList(surrogate)];
-							sb.Append($" Emoji=https://discordapp.com/assets/{filename}");
+							if (emojiSurrogateToFilenameTable.TryGetValue(StringToEntityList(surrogate), out var filename))
+								sb.Append($" Emoji=https://discordapp.com/assets/{filename}");
+							else
+								sb.Append($" Emoji=[Unknown builtin surrogate: {emojiId} - {surrogate}]");
 						}
 						else
 							sb.Append($" Emoji=[Unknown builtin hash: {emojiId}]");
@@ -154,13 +158,26 @@ namespace Sandbox
 						memberCount++;
 						joins++;
 						if (timestamp > oneMonthAgo)
+						{
 							members.Add(((IMemberEvent)payload).MemberId);
+							monthJoins++;
+						}
+
 						break;
 					case EventId.MemberRemoved:
 						memberCount--;
 						leaves++;
+						;
+						if (timestamp > oneMonthAgo)
+						{
+							members.Add(((IMemberEvent)payload).MemberId);
+							monthLeaves++;
+						}
+
 						break;
 					case EventId.SyncMemberCount when payload is IIntegerEvent iie:
+						if (iie.Data != memberCount)
+							Console.WriteLine($"Member sync inconsistent! Sync: {iie.Data}, Tally: {memberCount}");
 						memberCount = iie.Data;
 						break;
 					case EventId.MemberSpoke:
@@ -180,6 +197,7 @@ namespace Sandbox
 							welcomes[((IMemberEvent)payload).MemberId]++;
 							members.Remove(((IMentionEvent)payload).MentionId);
 						}
+
 						break;
 				}
 
@@ -189,11 +207,11 @@ namespace Sandbox
 			Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
 			Console.WriteLine($"Total reactions: {reactionCount} (+{reAdd}, -{reRem})");
 			Console.WriteLine($"Total messages: {messageCount}");
-			
+
 			Console.WriteLine();
 
-			Console.WriteLine("Welcome Leaderboard");
-			foreach (var (userId, numWelcomes) in welcomes.OrderByDescending(pair => pair.Value)) 
+			Console.WriteLine($"Welcome Leaderboard (+{monthJoins}/-{monthLeaves})");
+			foreach (var (userId, numWelcomes) in welcomes.OrderByDescending(pair => pair.Value))
 				Console.WriteLine($"{userId}: {numWelcomes}");
 		}
 	}

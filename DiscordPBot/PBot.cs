@@ -368,6 +368,7 @@ namespace DiscordPBot
 
 			var message = await downloadChannel.SendMessageAsync(builder => builder
 				.WithContent("@everyone A new PSWG version has been released!")
+				.WithAllowedMention(new EveryoneMention())
 				.AddEmbed(new DiscordEmbedBuilder()
 					.WithTitle(file.DisplayName)
 					.WithTimestamp(file.FileDate)
@@ -376,7 +377,7 @@ namespace DiscordPBot
 					.AddField($":speech_balloon: Feedback", MentionChannel(_generalChannel), true)
 					.AddField($":beetle: Report Bugs", MentionChannel(_bugsChannel), true)
 					.AddField($":bulb: Suggestions", MentionChannel(_suggestionsChannel), true)
-					.AddField($"Support {supportEmoji}", $"If you'd like to show a token of your appreciation, consider checking out the rewards in {MentionChannel(_supportChannel)}!")
+					.AddField($"{supportEmoji} Support", $"If you'd like to show a token of your appreciation, consider checking out the rewards in {MentionChannel(_supportChannel)}!")
 					.Build())
 				.AddEmbed(changelogEmbed.Build())
 			);
