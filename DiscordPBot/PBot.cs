@@ -31,12 +31,12 @@ namespace DiscordPBot
 		private const bool Production = true;
 
 		private static string _appName = "PBot";
-		
+
 		private static string _discordToken;
 
 		private static ulong _ownerId;
 		private static ulong _guild;
-		
+
 		private static ulong _managementChannel;
 		private static ulong _downloadAnnouncementChannel;
 		private static ulong _generalChannel;
@@ -48,8 +48,9 @@ namespace DiscordPBot
 		private static ulong _supportEmoji;
 
 		private static string _curseForgeApiKey;
-		private static int _curseForgeProjectId;
-		private static string _curseForgeProjectSlug;
+		public static DateTime LastCurseForgeRefresh { get; private set; } = DateTime.UnixEpoch;
+		public static int[] CurseForgeProjectIds { get; private set; }
+		public static string[] CurseForgeProjectSlugs { get; private set; }
 
 		internal static readonly ManualResetEventSlim ExitHandle = new();
 
@@ -62,7 +63,7 @@ namespace DiscordPBot
 		private static AtomicLogger _alog;
 
 		private static LiteDatabase _db;
-		
+
 		public static ILiteCollection<CurseForgeFileDatabaseEntry> CfFileCollection { get; private set; }
 		public static ulong OwnerId => _ownerId;
 
@@ -70,23 +71,23 @@ namespace DiscordPBot
 		{
 			Env.Load();
 			_appName = Env.GetString("APP_NAME");
-			
+
 			_discordToken = Env.GetString("DISCORD_TOKEN");
-			
+
 			_ownerId = EnvGetUlong("OWNER_ID");
 			_guild = EnvGetUlong("MANAGED_GUILD");
-			
+
 			_curseForgeApiKey = Env.GetString("CURSEFORGE_API_KEY");
-			_curseForgeProjectId = Env.GetInt("CURSEFORGE_PROJECT_ID");
-			_curseForgeProjectSlug = Env.GetString("CURSEFORGE_PROJECT_SLUG");
-			
+			CurseForgeProjectIds = Env.GetString("CURSEFORGE_PROJECT_ID").Split(',').Select(int.Parse).ToArray();
+			CurseForgeProjectSlugs = Env.GetString("CURSEFORGE_PROJECT_SLUG").Split(',');
+
 			_managementChannel = EnvGetUlong("MANAGEMENT_CHANNEL");
 			_downloadAnnouncementChannel = EnvGetUlong("DOWNLOAD_ANNOUNCEMENT_CHANNEL");
 			_generalChannel = EnvGetUlong("GENERAL_CHANNEL");
 			_suggestionsChannel = EnvGetUlong("SUGGESTIONS_CHANNEL");
 			_bugsChannel = EnvGetUlong("BUGS_CHANNEL");
 			_supportChannel = EnvGetUlong("SUPPORT_CHANNEL");
-			
+
 			_curseForgeEmoji = EnvGetUlong("CURSEFORGE_EMOJI");
 			_supportEmoji = EnvGetUlong("SUPPORT_EMOJI");
 		}
@@ -300,7 +301,7 @@ namespace DiscordPBot
 		{
 			var guild = await GetManagedGuild();
 			var time = DateTime.UtcNow;
-			
+
 			await EventLogger.LogEvent(_alog, EventId.SyncMemberCount, new IntegerEvent(guild.MemberCount), time);
 			await EventLogger.LogEvent(_alog, EventId.SyncBoostCount, new IntegerEvent(guild.PremiumSubscriptionCount ?? 0), time);
 		}
@@ -309,6 +310,7 @@ namespace DiscordPBot
 		{
 			if (Production)
 			{
+				LastCurseForgeRefresh = DateTime.UtcNow;
 				try
 				{
 					await RefreshCurseFiles();
@@ -323,77 +325,84 @@ namespace DiscordPBot
 
 		public static async Task RefreshCurseFiles()
 		{
-			CurseForgeFilesResponse files;
-
-			try
+			for (var i = 0; i < CurseForgeProjectIds.Length; i++)
 			{
-				files = await _curseForgeApi.GetModFiles(_curseForgeProjectId);
+				var id = CurseForgeProjectIds[i];
+				var slug = CurseForgeProjectSlugs[i];
+
+				CurseForgeFilesResponse files;
+
+				try
+				{
+					files = await _curseForgeApi.GetModFiles(id);
+				}
+				catch (Exception e)
+				{
+					SendToManagement(new DiscordMessageBuilder().WithContent($":x: Unable to deserialize CurseForge API response while loading {slug}: {e.Message}"));
+					continue;
+				}
+
+				if (files == null)
+				{
+					SendToManagement(new DiscordMessageBuilder().WithContent($":x: Unable to deserialize CurseForge API response while loading {slug}, `files` was null."));
+					continue;
+				}
+
+				var file = files.Files.OrderByDescending(f => f.Id).First();
+
+				var curseChangelogResponse = await _curseForgeApi.GetModFileChangelog(id, file.Id);
+
+				if (CfFileCollection.Count() > 0 && CfFileCollection.Exists(f => f.Id == file.Id))
+					continue;
+
+				var managedGuild = await GetManagedGuild();
+
+				var curseEmoji = await managedGuild.GetEmojiAsync(_curseForgeEmoji);
+				var supportEmoji = await managedGuild.GetEmojiAsync(_supportEmoji);
+				var downloadChannel = managedGuild.GetChannel(_downloadAnnouncementChannel);
+
+				var doc = new XmlDocument();
+				doc.LoadXml($"<changelog>{curseChangelogResponse}</changelog>");
+
+				var changelogEmbed = new DiscordEmbedBuilder()
+					.WithColor(new DiscordColor(0x0D0D0D));
+				var fieldPrototypes = CreateEmbed(doc["changelog"].ChildNodes);
+
+				foreach (var (header, value) in fieldPrototypes)
+				{
+					changelogEmbed.AddField(HttpUtility.HtmlDecode(header ?? ""), HttpUtility.HtmlDecode(value));
+				}
+
+				var message = await downloadChannel.SendMessageAsync(builder => builder
+					.WithContent("@everyone A new update has been released!")
+					.WithAllowedMention(new EveryoneMention())
+					.AddEmbed(new DiscordEmbedBuilder()
+						.WithTitle(file.DisplayName)
+						.WithTimestamp(file.FileDate)
+						.WithColor(new DiscordColor(0xFFD400))
+						.AddField($"Download on {curseEmoji} CurseForge", $"https://www.curseforge.com/minecraft/mc-mods/{slug}/files/{file.Id}")
+						.AddField($":speech_balloon: Feedback", MentionChannel(_generalChannel), true)
+						.AddField($":beetle: Report Bugs", MentionChannel(_bugsChannel), true)
+						.AddField($":bulb: Suggestions", MentionChannel(_suggestionsChannel), true)
+						.AddField($"{supportEmoji} Support", $"Want to chip in a couple bucks? Check out the rewards in {MentionChannel(_supportChannel)}! All proceeds fund development costs.")
+						.Build())
+					.AddEmbed(changelogEmbed.Build())
+				);
+
+				CfFileCollection.Insert(new CurseForgeFileDatabaseEntry
+				{
+					Id = file.Id,
+					DisplayName = file.DisplayName,
+					FileDate = file.FileDate,
+					FileName = file.FileName
+				});
+				_db.Checkpoint();
+
+				await downloadChannel.CrosspostMessageAsync(message);
+
+				SendToManagement(new DiscordMessageBuilder().WithContent(
+					$":white_check_mark: Found new CurseForge file for {slug} **{file.DisplayName}** (`{file.Id}`), notified {downloadChannel.Mention}"));
 			}
-			catch (Exception e)
-			{
-				SendToManagement(new DiscordMessageBuilder().WithContent($":x: Unable to deserialize CurseForge API response: {e.Message}"));
-				return;
-			}
-
-			if (files == null)
-			{
-				SendToManagement(new DiscordMessageBuilder().WithContent(":x: Unable to deserialize CurseForge API response, `files` was null."));
-				return;
-			}
-
-			var file = files.Files.OrderByDescending(f => f.Id).First();
-
-			var curseChangelogResponse = await _curseForgeApi.GetModFileChangelog(_curseForgeProjectId, file.Id);
-
-			if (CfFileCollection.Count() > 0 && CfFileCollection.Exists(f => f.Id == file.Id))
-				return;
-
-			var managedGuild = await GetManagedGuild();
-
-			var curseEmoji = await managedGuild.GetEmojiAsync(_curseForgeEmoji);
-			var supportEmoji = await managedGuild.GetEmojiAsync(_supportEmoji);
-			var downloadChannel = managedGuild.GetChannel(_downloadAnnouncementChannel);
-
-			var doc = new XmlDocument();
-			doc.LoadXml($"<changelog>{curseChangelogResponse}</changelog>");
-
-			var changelogEmbed = new DiscordEmbedBuilder()
-				.WithColor(new DiscordColor(0x0D0D0D));
-			var fieldPrototypes = CreateEmbed(doc["changelog"].ChildNodes);
-
-			foreach (var (header, value) in fieldPrototypes)
-			{
-				changelogEmbed.AddField(HttpUtility.HtmlDecode(header ?? ""), HttpUtility.HtmlDecode(value));
-			}
-
-			var message = await downloadChannel.SendMessageAsync(builder => builder
-				.WithContent("@everyone A new PSWG version has been released!")
-				.WithAllowedMention(new EveryoneMention())
-				.AddEmbed(new DiscordEmbedBuilder()
-					.WithTitle(file.DisplayName)
-					.WithTimestamp(file.FileDate)
-					.WithColor(new DiscordColor(0xFFD400))
-					.AddField($"Download on {curseEmoji} CurseForge", $"https://www.curseforge.com/minecraft/mc-mods/{_curseForgeProjectSlug}/files/{file.Id}")
-					.AddField($":speech_balloon: Feedback", MentionChannel(_generalChannel), true)
-					.AddField($":beetle: Report Bugs", MentionChannel(_bugsChannel), true)
-					.AddField($":bulb: Suggestions", MentionChannel(_suggestionsChannel), true)
-					.AddField($"{supportEmoji} Support", $"If you'd like to show a token of your appreciation, consider checking out the rewards in {MentionChannel(_supportChannel)}!")
-					.Build())
-				.AddEmbed(changelogEmbed.Build())
-			);
-			
-			CfFileCollection.Insert(new CurseForgeFileDatabaseEntry
-			{
-				Id = file.Id,
-				DisplayName = file.DisplayName,
-				FileDate = file.FileDate,
-				FileName = file.FileName
-			});
-			_db.Checkpoint();
-
-			await downloadChannel.CrosspostMessageAsync(message);
-
-			SendToManagement(new DiscordMessageBuilder().WithContent($":white_check_mark: Found new CurseForge file **{file.DisplayName}** (`{file.Id}`), notified {downloadChannel.Mention}"));
 		}
 
 		private static string MentionChannel(ulong channelId)
@@ -455,15 +464,38 @@ namespace DiscordPBot
 
 	public class CurseForgeModule : BaseCommandModule
 	{
+		[Command("cf_meta")]
+		public async Task GetMeta(CommandContext ctx)
+		{
+			var sb = new StringBuilder();
+
+			for (var i = 0; i < PBot.CurseForgeProjectIds.Length; i++)
+			{
+				sb.AppendLine($"Tracking project: `{PBot.CurseForgeProjectIds[i]} {PBot.CurseForgeProjectSlugs[i]}`");
+			}
+
+			sb.AppendLine($"Last check: <t:{((DateTimeOffset)PBot.LastCurseForgeRefresh).ToUnixTimeSeconds()}:R>");
+			sb.AppendLine($"Next check: <t:{((DateTimeOffset)PBot.LastCurseForgeRefresh.AddMinutes(15)).ToUnixTimeSeconds()}:R>");
+			
+			await ctx.Message.RespondAsync(sb.ToString());
+		}
+		
 		[Command("cf_latest")]
 		public async Task GetLatest(CommandContext ctx)
 		{
-			var file = PBot.CfFileCollection.Query()
+			var files = PBot.CfFileCollection.Query()
 				.OrderByDescending(files => files.FileDate)
-				.First();
+				.Limit(4)
+				.ToArray();
 
-			var timestamp = (DateTimeOffset)file.FileDate;
-			await ctx.Message.RespondAsync($"Most recent CurseForge file is **{file.DisplayName}** (`{file.Id}`), released <t:{timestamp.ToUnixTimeSeconds()}:R>");
+			var sb = new StringBuilder();
+			foreach (var file in files)
+			{
+				var timestamp = (DateTimeOffset)file.FileDate;
+				sb.AppendLine($"**{file.DisplayName}** (`{file.Id} {file.FileName}`), released <t:{timestamp.ToUnixTimeSeconds()}:R>");
+			}
+
+			await ctx.Message.RespondAsync($"Most recent CurseForge files are:\n{sb}");
 		}
 
 		[Command("cf_refresh")]

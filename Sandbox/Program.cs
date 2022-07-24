@@ -98,11 +98,14 @@ namespace Sandbox
 			var firstEvent = data.Min(e => e.Timestamp);
 
 			var members = new HashSet<ulong>();
+			var messageMemberMap = new Dictionary<ulong, ulong>();
 
 			var welcomes = new Histogram<ulong>();
 			var monthJoins = 0;
 			var monthLeaves = 0;
 			var oneMonthAgo = DateTime.UtcNow - TimeSpan.FromDays(30);
+
+			var diamondWelcomeValue = 5;
 
 			foreach (var (id, timestamp, payload) in data)
 			{
@@ -167,7 +170,7 @@ namespace Sandbox
 					case EventId.MemberRemoved:
 						memberCount--;
 						leaves++;
-						;
+						
 						if (timestamp > oneMonthAgo)
 						{
 							members.Add(((IMemberEvent)payload).MemberId);
@@ -182,10 +185,16 @@ namespace Sandbox
 						break;
 					case EventId.MemberSpoke:
 						messageCount++;
+						// messageMemberMap[((IMessageEvent)payload).MessageId] = ((IMemberEvent)payload).MemberId;
 						break;
-					case EventId.ReactionAdded:
+					case EventId.ReactionAdded when payload is IMessageEvent ime and IEmojiEvent iee:
 						reactionCount++;
 						reAdd++;
+						
+						// if (timestamp > oneMonthAgo && iee.EmojiId == 873401784289341491) // diamond
+						// {
+						// 	welcomes[messageMemberMap[ime.MessageId]] += diamondWelcomeValue;
+						// }
 						break;
 					case EventId.ReactionRemoved:
 						reactionCount--;

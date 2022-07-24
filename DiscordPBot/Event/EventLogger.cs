@@ -57,10 +57,10 @@ namespace DiscordPBot.Event
 					{
 						case MessageType.Default:
 						case MessageType.Reply:
-							await LogEvent(log, EventId.MemberSpoke, new MemberChannelEvent(args.Author.Id, args.Channel.Id), time);
+							await LogEvent(log, EventId.MemberSpoke, new MemberChannelMessageEvent(args.Author.Id, args.Channel.Id, args.Message.Id), time);
 							break;
 						case MessageType.ChannelPinnedMessage:
-							await LogEvent(log, EventId.MessagePinned, new MemberChannelEvent(args.Author.Id, args.Channel.Id), time);
+							await LogEvent(log, EventId.MessagePinned, new MemberChannelMessageEvent(args.Author.Id, args.Channel.Id, args.Message.Id), time);
 							break;
 						case MessageType.UserPremiumGuildSubscription:
 							await LogEvent(log, EventId.NitroBoost, new MemberEvent(args.Author.Id), time);
@@ -75,7 +75,7 @@ namespace DiscordPBot.Event
 							await LogEvent(log, EventId.NitroBoostObtainTier3, new MemberEvent(args.Author.Id), time);
 							break;
 						case MessageType.ApplicationCommand:
-							await LogEvent(log, EventId.MemberUsedCommand, new MemberChannelEvent(args.Author.Id, args.Channel.Id), time);
+							await LogEvent(log, EventId.MemberUsedCommand, new MemberChannelMessageEvent(args.Author.Id, args.Channel.Id, args.Message.Id), time);
 							break;
 					}
 
@@ -168,12 +168,17 @@ namespace DiscordPBot.Event
 						break;
 					}
 					case EventId.MemberSpoke:
+					case EventId.MessagePinned:
+					case EventId.MemberUsedCommand:
+					{
+						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberChannelMessageEvent>(br)));
+						// events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberChannelEvent>(br)));
+						break;
+					}
 					case EventId.MemberJoinVoice:
 					case EventId.MemberLeaveVoice:
 					case EventId.InviteCreated:
 					case EventId.InviteDeleted:
-					case EventId.MessagePinned:
-					case EventId.MemberUsedCommand:
 					{
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<MemberChannelEvent>(br)));
 						break;
