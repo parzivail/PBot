@@ -83,6 +83,7 @@ namespace Sandbox
 
 			var messageCount = 0;
 
+			var diamondCount = 0;
 			var reactionCount = 0;
 			var reAdd = 0;
 			var reRem = 0;
@@ -185,16 +186,18 @@ namespace Sandbox
 						break;
 					case EventId.MemberSpoke:
 						messageCount++;
-						// messageMemberMap[((IMessageEvent)payload).MessageId] = ((IMemberEvent)payload).MemberId;
+						messageMemberMap[((IMessageEvent)payload).MessageId] = ((IMemberEvent)payload).MemberId;
 						break;
 					case EventId.ReactionAdded when payload is IMessageEvent ime and IEmojiEvent iee:
 						reactionCount++;
 						reAdd++;
 						
-						// if (timestamp > oneMonthAgo && iee.EmojiId == 873401784289341491) // diamond
-						// {
-						// 	welcomes[messageMemberMap[ime.MessageId]] += diamondWelcomeValue;
-						// }
+						if (timestamp > oneMonthAgo && iee.EmojiId == 873401784289341491) // diamond
+						{
+							diamondCount++;
+							if (messageMemberMap.ContainsKey(ime.MessageId))
+								welcomes[messageMemberMap[ime.MessageId]] += diamondWelcomeValue;
+						}
 						break;
 					case EventId.ReactionRemoved:
 						reactionCount--;
@@ -215,13 +218,14 @@ namespace Sandbox
 
 			Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
 			Console.WriteLine($"Total reactions: {reactionCount} (+{reAdd}, -{reRem})");
+			Console.WriteLine($"Total diamonds: {diamondCount}");
 			Console.WriteLine($"Total messages: {messageCount}");
 
 			Console.WriteLine();
 
 			Console.WriteLine($"Welcome Leaderboard (+{monthJoins}/-{monthLeaves})");
 			foreach (var (userId, numWelcomes) in welcomes.OrderByDescending(pair => pair.Value))
-				Console.WriteLine($"{userId}: {numWelcomes}");
+				Console.WriteLine($"<@!{userId}>: {numWelcomes}");
 		}
 	}
 }

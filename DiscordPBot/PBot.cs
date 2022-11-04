@@ -67,6 +67,8 @@ namespace DiscordPBot
 		public static ILiteCollection<CurseForgeFileDatabaseEntry> CfFileCollection { get; private set; }
 		public static ulong OwnerId => _ownerId;
 
+		public static DateTime StartTime;
+
 		private static void LoadEnv()
 		{
 			Env.Load();
@@ -90,6 +92,8 @@ namespace DiscordPBot
 
 			_curseForgeEmoji = EnvGetUlong("CURSEFORGE_EMOJI");
 			_supportEmoji = EnvGetUlong("SUPPORT_EMOJI");
+			
+			StartTime = DateTime.Now;
 		}
 
 		private static ulong EnvGetUlong(string key, string fallback = null)
@@ -348,11 +352,26 @@ namespace DiscordPBot
 					continue;
 				}
 
+				if (files.Files.Count == 0)
+					continue;
+
 				var file = files.Files.OrderByDescending(f => f.Id).First();
 
 				var curseChangelogResponse = await _curseForgeApi.GetModFileChangelog(id, file.Id);
 
 				if (CfFileCollection.Count() > 0 && CfFileCollection.Exists(f => f.Id == file.Id))
+					continue;
+
+				CfFileCollection.Insert(new CurseForgeFileDatabaseEntry
+				{
+					Id = file.Id,
+					DisplayName = file.DisplayName,
+					FileDate = file.FileDate,
+					FileName = file.FileName
+				});
+				_db.Checkpoint();
+				
+				if (file.FileDate < StartTime)
 					continue;
 
 				var managedGuild = await GetManagedGuild();
@@ -373,35 +392,32 @@ namespace DiscordPBot
 					changelogEmbed.AddField(HttpUtility.HtmlDecode(header ?? ""), HttpUtility.HtmlDecode(value));
 				}
 
-				var message = await downloadChannel.SendMessageAsync(builder => builder
-					.WithContent("@everyone A new update has been released!")
-					.WithAllowedMention(new EveryoneMention())
-					.AddEmbed(new DiscordEmbedBuilder()
-						.WithTitle(file.DisplayName)
-						.WithTimestamp(file.FileDate)
-						.WithColor(new DiscordColor(0xFFD400))
-						.AddField($"Download on {curseEmoji} CurseForge", $"https://www.curseforge.com/minecraft/mc-mods/{slug}/files/{file.Id}")
-						.AddField($":speech_balloon: Feedback", MentionChannel(_generalChannel), true)
-						.AddField($":beetle: Report Bugs", MentionChannel(_bugsChannel), true)
-						.AddField($":bulb: Suggestions", MentionChannel(_suggestionsChannel), true)
-						.AddField($"{supportEmoji} Support", $"Want to chip in a couple bucks? Check out the rewards in {MentionChannel(_supportChannel)}! All proceeds fund development costs.")
-						.Build())
-					.AddEmbed(changelogEmbed.Build())
-				);
-
-				CfFileCollection.Insert(new CurseForgeFileDatabaseEntry
+				var message = await downloadChannel.SendMessageAsync(builder =>
 				{
-					Id = file.Id,
-					DisplayName = file.DisplayName,
-					FileDate = file.FileDate,
-					FileName = file.FileName
+					builder
+						.WithContent("@everyone A new update has been released!")
+						.WithAllowedMention(new EveryoneMention())
+						.AddEmbed(new DiscordEmbedBuilder()
+							.WithTitle(file.DisplayName)
+							.WithTimestamp(file.FileDate)
+							.WithColor(new DiscordColor(0xFFD400))
+							.AddField($"Download on {curseEmoji} CurseForge", $"https://www.curseforge.com/minecraft/{slug}/files/{file.Id}")
+							.AddField($":speech_balloon: Feedback", MentionChannel(_generalChannel), true)
+							.AddField($":beetle: Report Bugs", MentionChannel(_bugsChannel), true)
+							.AddField($":bulb: Suggestions", MentionChannel(_suggestionsChannel), true)
+							.AddField($"{supportEmoji} Support", $"Want to chip in a couple bucks? Check out the rewards in {MentionChannel(_supportChannel)}! All proceeds fund development costs.")
+							.Build());
+					if (changelogEmbed.Fields.Count > 0)
+						builder.AddEmbed(changelogEmbed.Build());
 				});
-				_db.Checkpoint();
 
 				await downloadChannel.CrosspostMessageAsync(message);
 
 				SendToManagement(new DiscordMessageBuilder().WithContent(
 					$":white_check_mark: Found new CurseForge file for {slug} **{file.DisplayName}** (`{file.Id}`), notified {downloadChannel.Mention}"));
+				
+				// Don't notify for more than one project per refresh cycle
+				return;
 			}
 		}
 
