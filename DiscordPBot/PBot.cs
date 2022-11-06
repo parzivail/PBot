@@ -373,6 +373,8 @@ namespace DiscordPBot
 				
 				if (file.FileDate < StartTime)
 					continue;
+				
+				var details = await _curseForgeApi.GetMod(id);
 
 				var managedGuild = await GetManagedGuild();
 
@@ -387,18 +389,17 @@ namespace DiscordPBot
 					.WithColor(new DiscordColor(0x0D0D0D));
 				var fieldPrototypes = CreateEmbed(doc["changelog"].ChildNodes);
 
-				foreach (var (header, value) in fieldPrototypes)
-				{
+				foreach (var (header, value) in fieldPrototypes) 
 					changelogEmbed.AddField(HttpUtility.HtmlDecode(header ?? ""), HttpUtility.HtmlDecode(value));
-				}
 
 				var message = await downloadChannel.SendMessageAsync(builder =>
 				{
 					builder
-						.WithContent("@everyone A new update has been released!")
+						.WithContent($"@everyone A new {details.Name} update has been released!")
 						.WithAllowedMention(new EveryoneMention())
 						.AddEmbed(new DiscordEmbedBuilder()
 							.WithTitle(file.DisplayName)
+							.WithThumbnail(details.Logo.ThumbnailUrl)
 							.WithTimestamp(file.FileDate)
 							.WithColor(new DiscordColor(0xFFD400))
 							.AddField($"Download on {curseEmoji} CurseForge", $"https://www.curseforge.com/minecraft/{slug}/files/{file.Id}")
@@ -485,10 +486,8 @@ namespace DiscordPBot
 		{
 			var sb = new StringBuilder();
 
-			for (var i = 0; i < PBot.CurseForgeProjectIds.Length; i++)
-			{
+			for (var i = 0; i < PBot.CurseForgeProjectIds.Length; i++) 
 				sb.AppendLine($"Tracking project: `{PBot.CurseForgeProjectIds[i]} {PBot.CurseForgeProjectSlugs[i]}`");
-			}
 
 			sb.AppendLine($"Last check: <t:{((DateTimeOffset)PBot.LastCurseForgeRefresh).ToUnixTimeSeconds()}:R>");
 			sb.AppendLine($"Next check: <t:{((DateTimeOffset)PBot.LastCurseForgeRefresh.AddMinutes(15)).ToUnixTimeSeconds()}:R>");
@@ -527,7 +526,9 @@ namespace DiscordPBot
 		private static Dictionary<string, ulong> _roleNames = new()
 		{
 			{ "rebel", 541458430796234752 },
+			{ "republic", 1038944075568656394 },
 			{ "empire", 541458360445304854 },
+			{ "separatists", 1038944417836449893 },
 			{ "jedi", 541456961582137356 },
 			{ "sith", 541457017672433694 },
 			{ "droid", 541458558915444746 },
