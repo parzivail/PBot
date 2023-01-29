@@ -98,15 +98,22 @@ namespace Sandbox
 
 			var firstEvent = data.Min(e => e.Timestamp);
 
-			var members = new HashSet<ulong>();
 			var messageMemberMap = new Dictionary<ulong, ulong>();
 
 			var welcomes = new Histogram<ulong>();
+			var welcomeable = new HashSet<ulong>();
+			var welcomed = new HashSet<ulong>();
+			
 			var monthJoins = 0;
 			var monthLeaves = 0;
 			var oneMonthAgo = DateTime.UtcNow - TimeSpan.FromDays(30);
 
 			var diamondWelcomeValue = 5;
+
+			var timeStep = TimeSpan.FromDays(1);
+			var cursor = firstEvent;
+			int stepJoins = 0;
+			int stepLeaves = 0;
 
 			foreach (var (id, timestamp, payload) in data)
 			{
@@ -161,21 +168,24 @@ namespace Sandbox
 					case EventId.MemberAdded:
 						memberCount++;
 						joins++;
+						stepJoins++;
+
 						if (timestamp > oneMonthAgo)
 						{
-							members.Add(((IMemberEvent)payload).MemberId);
 							monthJoins++;
+							welcomeable.Add(((IMemberEvent)payload).MemberId);
 						}
 
 						break;
 					case EventId.MemberRemoved:
 						memberCount--;
 						leaves++;
-						
+						stepLeaves++;
+
 						if (timestamp > oneMonthAgo)
 						{
-							members.Add(((IMemberEvent)payload).MemberId);
 							monthLeaves++;
+							welcomeable.Remove(((IMemberEvent)payload).MemberId);
 						}
 
 						break;
@@ -191,29 +201,46 @@ namespace Sandbox
 					case EventId.ReactionAdded when payload is IMessageEvent ime and IEmojiEvent iee:
 						reactionCount++;
 						reAdd++;
-						
+
 						if (timestamp > oneMonthAgo && iee.EmojiId == 873401784289341491) // diamond
 						{
 							diamondCount++;
 							if (messageMemberMap.ContainsKey(ime.MessageId))
 								welcomes[messageMemberMap[ime.MessageId]] += diamondWelcomeValue;
 						}
+
 						break;
 					case EventId.ReactionRemoved:
 						reactionCount--;
 						reRem++;
 						break;
 					case EventId.MemberMentioned:
-						if (members.Contains(((IMentionEvent)payload).MentionId))
+					{
+						var mentionedId = ((IMentionEvent)payload).MentionId;
+						var senderId = ((IMemberEvent)payload).MemberId;
+						
+						if (welcomeable.Contains(mentionedId) && !welcomed.Contains(mentionedId))
 						{
-							welcomes[((IMemberEvent)payload).MemberId]++;
-							members.Remove(((IMentionEvent)payload).MentionId);
+							welcomes[senderId]++;
+							welcomeable.Remove(mentionedId);
+							welcomed.Add(mentionedId);
 						}
-
+						
 						break;
+					}
 				}
 
-				Console.WriteLine(sb.ToString());
+				// Log member count
+				// if (timestamp > cursor + timeStep)
+				// {
+				// 	Console.WriteLine($"{cursor},{stepJoins},{stepLeaves},{memberCount}");
+				// 	stepJoins = 0;
+				// 	stepLeaves = 0;
+				// 	cursor += timeStep;
+				// }
+			
+				// Print each entry to the console
+				// Console.WriteLine(sb.ToString());
 			}
 
 			Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
@@ -224,8 +251,12 @@ namespace Sandbox
 			Console.WriteLine();
 
 			Console.WriteLine($"Welcome Leaderboard (+{monthJoins}/-{monthLeaves})");
-			foreach (var (userId, numWelcomes) in welcomes.OrderByDescending(pair => pair.Value))
-				Console.WriteLine($"<@!{userId}>: {numWelcomes}");
+			var welcomers = welcomes.OrderByDescending(pair => pair.Value).ToArray();
+			var aboveMedian = welcomers[..(welcomers.Length / 2)];
+			var belowMedian = welcomers[(welcomers.Length / 2)..];
+			
+			Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
+			Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
 		}
 	}
 }
