@@ -26,5 +26,7 @@
 		MemberMentioned = 22,
 		ChannelMentioned = 23,
 		RoleMentioned = 24,
+		SyncProjectDownloads = 25,
+		SyncProjectFollowers = 26
 	}
 }

@@ -10,6 +10,7 @@ using System.Xml;
 using BitLog;
 using DiscordPBot.Event;
 using DiscordPBot.Model;
+using DiscordPBot.Modrinth;
 using DotNetEnv;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
@@ -17,6 +18,7 @@ using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 using LiteDB;
+using Markdig;
 using Microsoft.Extensions.Logging;
 using MinecraftCurseForge.NET;
 using Newtonsoft.Json;
@@ -46,11 +48,14 @@ namespace DiscordPBot
 
 		private static ulong _curseForgeEmoji;
 		private static ulong _supportEmoji;
+		private static ulong _modrinthEmoji;
 
 		private static string _curseForgeApiKey;
-		public static DateTime LastCurseForgeRefresh { get; private set; } = DateTime.UnixEpoch;
+		public static DateTime LastFileRefresh { get; private set; } = DateTime.UnixEpoch;
 		public static int[] CurseForgeProjectIds { get; private set; }
 		public static string[] CurseForgeProjectSlugs { get; private set; }
+		public static string[] ModrinthProjectSlugs { get; private set; }
+		public static ulong[] ModrinthProjectIndices { get; private set; }
 
 		internal static readonly ManualResetEventSlim ExitHandle = new();
 
@@ -58,6 +63,7 @@ namespace DiscordPBot
 		private static Timer _taskScheduler15Min;
 
 		private static CurseForgeApi _curseForgeApi;
+		private static ModrinthApi _modrinthApi = new();
 		private static DiscordClient _discord;
 
 		private static AtomicLogger _alog;
@@ -65,6 +71,7 @@ namespace DiscordPBot
 		private static LiteDatabase _db;
 
 		public static ILiteCollection<CurseForgeFileDatabaseEntry> CfFileCollection { get; private set; }
+		public static ILiteCollection<ModrinthFileDatabaseEntry> MrFileCollection { get; private set; }
 		public static ulong OwnerId => _ownerId;
 
 		public static DateTime StartTime;
@@ -82,6 +89,8 @@ namespace DiscordPBot
 			_curseForgeApiKey = Env.GetString("CURSEFORGE_API_KEY");
 			CurseForgeProjectIds = Env.GetString("CURSEFORGE_PROJECT_ID").Split(',').Select(int.Parse).ToArray();
 			CurseForgeProjectSlugs = Env.GetString("CURSEFORGE_PROJECT_SLUG").Split(',');
+			ModrinthProjectSlugs = Env.GetString("MODRINTH_PROJECT_SLUG").Split(',');
+			ModrinthProjectIndices = Env.GetString("MODRINTH_PROJECT_INDEX").Split(',').Select(ulong.Parse).ToArray();
 
 			_managementChannel = EnvGetUlong("MANAGEMENT_CHANNEL");
 			_downloadAnnouncementChannel = EnvGetUlong("DOWNLOAD_ANNOUNCEMENT_CHANNEL");
@@ -92,7 +101,8 @@ namespace DiscordPBot
 
 			_curseForgeEmoji = EnvGetUlong("CURSEFORGE_EMOJI");
 			_supportEmoji = EnvGetUlong("SUPPORT_EMOJI");
-			
+			_modrinthEmoji = EnvGetUlong("MODRINTH_EMOJI");
+
 			StartTime = DateTime.Now;
 		}
 
@@ -112,6 +122,9 @@ namespace DiscordPBot
 
 				CfFileCollection = _db.GetCollection<CurseForgeFileDatabaseEntry>("cf_files");
 				CfFileCollection.EnsureIndex(file => file.Id);
+				
+				MrFileCollection = _db.GetCollection<ModrinthFileDatabaseEntry>("modrinth_files");
+				MrFileCollection.EnsureIndex(file => file.Id);
 
 				try
 				{
@@ -162,7 +175,7 @@ namespace DiscordPBot
 			commands.RegisterCommands<ExitModule>();
 			commands.RegisterCommands<PingModule>();
 			commands.RegisterCommands<CurseForgeModule>();
-			commands.RegisterCommands<RoleModule>();
+			commands.RegisterCommands<ModrinthModule>();
 
 			_discord.Logger.Log(LogLevel.Information, $"{_appName} running");
 
@@ -314,7 +327,7 @@ namespace DiscordPBot
 		{
 			if (Production)
 			{
-				LastCurseForgeRefresh = DateTime.UtcNow;
+				LastFileRefresh = DateTime.UtcNow;
 				try
 				{
 					await RefreshCurseFiles();
@@ -323,6 +336,15 @@ namespace DiscordPBot
 				{
 					// CurseForge API probably has a problem, log and move on
 					_discord.Logger.Log(LogLevel.Error, $"Couldn't refresh CurseForge files: {e.Message}");
+				}
+				try
+				{
+					await RefreshModrinthFiles();
+				}
+				catch (HttpRequestException e)
+				{
+					// Modrinth API probably has a problem, log and move on
+					_discord.Logger.Log(LogLevel.Error, $"Couldn't refresh Modrinth files: {e.Message}");
 				}
 			}
 		}
@@ -370,10 +392,10 @@ namespace DiscordPBot
 					FileName = file.FileName
 				});
 				_db.Checkpoint();
-				
+
 				if (file.FileDate < StartTime)
 					continue;
-				
+
 				var details = await _curseForgeApi.GetMod(id);
 
 				var managedGuild = await GetManagedGuild();
@@ -389,7 +411,7 @@ namespace DiscordPBot
 					.WithColor(new DiscordColor(0x0D0D0D));
 				var fieldPrototypes = CreateEmbed(doc["changelog"].ChildNodes);
 
-				foreach (var (header, value) in fieldPrototypes) 
+				foreach (var (header, value) in fieldPrototypes)
 					changelogEmbed.AddField(HttpUtility.HtmlDecode(header ?? ""), HttpUtility.HtmlDecode(value));
 
 				var message = await downloadChannel.SendMessageAsync(builder =>
@@ -416,7 +438,102 @@ namespace DiscordPBot
 
 				SendToManagement(new DiscordMessageBuilder().WithContent(
 					$":white_check_mark: Found new CurseForge file for {slug} **{file.DisplayName}** (`{file.Id}`), notified {downloadChannel.Mention}"));
+
+				// Don't notify for more than one project per refresh cycle
+				return;
+			}
+		}
+
+		public static async Task RefreshModrinthFiles()
+		{
+			for (var i = 0; i < ModrinthProjectSlugs.Length; i++)
+			{
+				var slug = ModrinthProjectSlugs[i];
+				var idx = ModrinthProjectIndices[i];
 				
+				var project = await _modrinthApi.GetProject(slug);
+				await EventLogger.LogEvent(_alog, EventId.SyncProjectDownloads, new IntegerUInt64KeyEvent(project.Downloads, idx), DateTime.UtcNow);
+				await EventLogger.LogEvent(_alog, EventId.SyncProjectFollowers, new IntegerUInt64KeyEvent(project.Followers, idx), DateTime.UtcNow);
+				
+				ModrinthProjectVersionResponse[] projectVersions;
+
+				try
+				{
+					projectVersions = await _modrinthApi.GetProjectVersions(slug);
+				}
+				catch (Exception e)
+				{
+					SendToManagement(new DiscordMessageBuilder().WithContent($":x: Unable to deserialize Modrinth API response while loading {slug}: {e.Message}"));
+					continue;
+				}
+
+				if (projectVersions == null || projectVersions.Length == 0)
+				{
+					SendToManagement(new DiscordMessageBuilder().WithContent($":x: Unable to deserialize Modrinth API response while loading {slug}, `files` was null or empty."));
+					continue;
+				}
+
+				var file = projectVersions.OrderByDescending(f => f.DatePublished).First();
+
+				if (MrFileCollection.Count() > 0 && MrFileCollection.Exists(f => f.Id == file.Id))
+					continue;
+
+				MrFileCollection.Insert(new ModrinthFileDatabaseEntry()
+				{
+					Id = file.Id,
+					VersionNumber = file.VersionNumber,
+					FileDate = file.DatePublished,
+					FileName = file.Name
+				});
+				_db.Checkpoint();
+
+				if (file.DatePublished < StartTime)
+					continue;
+
+				var managedGuild = await GetManagedGuild();
+
+				var modrinthEmoji = await managedGuild.GetEmojiAsync(_modrinthEmoji);
+				var supportEmoji = await managedGuild.GetEmojiAsync(_supportEmoji);
+				var downloadChannel = managedGuild.GetChannel(_downloadAnnouncementChannel);
+
+				var markdownHtml = Markdown.ToHtml(file.Changelog);
+
+				var doc = new XmlDocument();
+				doc.LoadXml($"<changelog>{markdownHtml}</changelog>");
+
+				var changelogEmbed = new DiscordEmbedBuilder()
+					.WithColor(new DiscordColor(0x0D0D0D));
+				var fieldPrototypes = CreateEmbed(doc["changelog"].ChildNodes);
+
+				foreach (var (header, value) in fieldPrototypes)
+					changelogEmbed.AddField(HttpUtility.HtmlDecode(header ?? ""), HttpUtility.HtmlDecode(value));
+
+				var slug1 = slug;
+				var message = await downloadChannel.SendMessageAsync(builder =>
+				{
+					builder
+						.WithContent($"@everyone A new {project.Title} update has been released!")
+						.WithAllowedMention(new EveryoneMention())
+						.AddEmbed(new DiscordEmbedBuilder()
+							.WithTitle(file.Name)
+							.WithThumbnail(project.IconUrl)
+							.WithTimestamp(file.DatePublished)
+							.WithColor(new DiscordColor(0xFFD400))
+							.AddField($"Download on {modrinthEmoji} Modrinth", $"https://modrinth.com/mod/{slug1}/version/{file.VersionNumber}")
+							.AddField($":speech_balloon: Feedback", MentionChannel(_generalChannel), true)
+							.AddField($":beetle: Report Bugs", MentionChannel(_bugsChannel), true)
+							.AddField($":bulb: Suggestions", MentionChannel(_suggestionsChannel), true)
+							.AddField($"{supportEmoji} Support", $"Want to chip in a couple bucks? Check out the rewards in {MentionChannel(_supportChannel)}! All proceeds fund development costs.")
+							.Build());
+					if (changelogEmbed.Fields.Count > 0)
+						builder.AddEmbed(changelogEmbed.Build());
+				});
+
+				await downloadChannel.CrosspostMessageAsync(message);
+
+				SendToManagement(new DiscordMessageBuilder().WithContent(
+					$":white_check_mark: Found new Modrinth file for {slug} **{file.Name}** (`{file.Id}`), notified {downloadChannel.Mention}"));
+
 				// Don't notify for more than one project per refresh cycle
 				return;
 			}
@@ -486,15 +603,15 @@ namespace DiscordPBot
 		{
 			var sb = new StringBuilder();
 
-			for (var i = 0; i < PBot.CurseForgeProjectIds.Length; i++) 
+			for (var i = 0; i < PBot.CurseForgeProjectIds.Length; i++)
 				sb.AppendLine($"Tracking project: `{PBot.CurseForgeProjectIds[i]} {PBot.CurseForgeProjectSlugs[i]}`");
 
-			sb.AppendLine($"Last check: <t:{((DateTimeOffset)PBot.LastCurseForgeRefresh).ToUnixTimeSeconds()}:R>");
-			sb.AppendLine($"Next check: <t:{((DateTimeOffset)PBot.LastCurseForgeRefresh.AddMinutes(15)).ToUnixTimeSeconds()}:R>");
-			
+			sb.AppendLine($"Last check: <t:{((DateTimeOffset)PBot.LastFileRefresh).ToUnixTimeSeconds()}:R>");
+			sb.AppendLine($"Next check: <t:{((DateTimeOffset)PBot.LastFileRefresh.AddMinutes(15)).ToUnixTimeSeconds()}:R>");
+
 			await ctx.Message.RespondAsync(sb.ToString());
 		}
-		
+
 		[Command("cf_latest")]
 		public async Task GetLatest(CommandContext ctx)
 		{
@@ -521,54 +638,45 @@ namespace DiscordPBot
 		}
 	}
 
-	public class RoleModule : BaseCommandModule
+	public class ModrinthModule : BaseCommandModule
 	{
-		private static Dictionary<string, ulong> _roleNames = new()
+		[Command("mr_meta")]
+		public async Task GetMeta(CommandContext ctx)
 		{
-			{ "rebel", 541458430796234752 },
-			{ "republic", 1038944075568656394 },
-			{ "empire", 541458360445304854 },
-			{ "separatists", 1038944417836449893 },
-			{ "jedi", 541456961582137356 },
-			{ "sith", 541457017672433694 },
-			{ "droid", 541458558915444746 },
-			{ "event", 497574739041320960 },
-		};
+			var sb = new StringBuilder();
 
-		[Command("join")]
-		public async Task Join(CommandContext ctx, string role)
-		{
-			role = role.ToLower().Trim();
-			if (_roleNames.TryGetValue(role, out var roleId))
-			{
-				var roleInstance = ctx.Guild.GetRole(roleId);
-				var member = await ctx.Guild.GetMemberAsync(ctx.User.Id);
-				await member.GrantRoleAsync(roleInstance);
+			for (var i = 0; i < PBot.ModrinthProjectSlugs.Length; i++)
+				sb.AppendLine($"Tracking project: `{PBot.ModrinthProjectSlugs[i]}`");
 
-				await ctx.Message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
-			}
-			else
-			{
-				await ctx.Message.RespondAsync($"No role named **{role}**!");
-			}
+			sb.AppendLine($"Last check: <t:{((DateTimeOffset)PBot.LastFileRefresh).ToUnixTimeSeconds()}:R>");
+			sb.AppendLine($"Next check: <t:{((DateTimeOffset)PBot.LastFileRefresh.AddMinutes(15)).ToUnixTimeSeconds()}:R>");
+
+			await ctx.Message.RespondAsync(sb.ToString());
 		}
 
-		[Command("leave")]
-		public async Task Leave(CommandContext ctx, string role)
+		[Command("mr_latest")]
+		public async Task GetLatest(CommandContext ctx)
 		{
-			role = role.ToLower().Trim();
-			if (_roleNames.TryGetValue(role, out var roleId))
-			{
-				var roleInstance = ctx.Guild.GetRole(roleId);
-				var member = await ctx.Guild.GetMemberAsync(ctx.User.Id);
-				await member.RevokeRoleAsync(roleInstance);
+			var files = PBot.MrFileCollection.Query()
+				.OrderByDescending(files => files.FileDate)
+				.Limit(4)
+				.ToArray();
 
-				await ctx.Message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
-			}
-			else
+			var sb = new StringBuilder();
+			foreach (var file in files)
 			{
-				await ctx.Message.RespondAsync($"No role named **{role}**!");
+				var timestamp = (DateTimeOffset)file.FileDate;
+				sb.AppendLine($"**{file.FileName}** (`{file.Id}`), released <t:{timestamp.ToUnixTimeSeconds()}:R>");
 			}
+
+			await ctx.Message.RespondAsync($"Most recent Modrinth files are:\n{sb}");
+		}
+
+		[Command("mr_refresh")]
+		public async Task Refresh(CommandContext ctx)
+		{
+			await PBot.RefreshModrinthFiles();
+			await ctx.Message.CreateReactionAsync(DiscordEmoji.FromName(ctx.Client, ":white_check_mark:"));
 		}
 	}
 }

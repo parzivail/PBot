@@ -228,35 +228,42 @@ namespace Sandbox
 						
 						break;
 					}
+					case EventId.SyncProjectDownloads when payload is IIntegerEvent iie and IntegerUInt64KeyEvent iuke:
+						break;
+					case EventId.SyncProjectFollowers when payload is IIntegerEvent iie and IntegerUInt64KeyEvent iuke:
+						break;
 				}
 
 				// Log member count
-				// if (timestamp > cursor + timeStep)
-				// {
-				// 	Console.WriteLine($"{cursor},{stepJoins},{stepLeaves},{memberCount}");
-				// 	stepJoins = 0;
-				// 	stepLeaves = 0;
-				// 	cursor += timeStep;
-				// }
+				if (timestamp > cursor + timeStep)
+				{
+					Console.WriteLine($"{cursor},{stepJoins},{stepLeaves},{memberCount}");
+					stepJoins = 0;
+					stepLeaves = 0;
+					cursor += timeStep;
+				}
 			
 				// Print each entry to the console
 				// Console.WriteLine(sb.ToString());
 			}
 
-			Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
-			Console.WriteLine($"Total reactions: {reactionCount} (+{reAdd}, -{reRem})");
-			Console.WriteLine($"Total diamonds: {diamondCount}");
-			Console.WriteLine($"Total messages: {messageCount}");
-
-			Console.WriteLine();
-
-			Console.WriteLine($"Welcome Leaderboard (+{monthJoins}/-{monthLeaves})");
-			var welcomers = welcomes.OrderByDescending(pair => pair.Value).ToArray();
-			var aboveMedian = welcomers[..(welcomers.Length / 2)];
-			var belowMedian = welcomers[(welcomers.Length / 2)..];
-			
-			Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
-			Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
+			// Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
+			// Console.WriteLine($"Total reactions: {reactionCount} (+{reAdd}, -{reRem})");
+			// Console.WriteLine($"Total diamonds: {diamondCount}");
+			// Console.WriteLine($"Total messages: {messageCount}");
+			//
+			// Console.WriteLine();
+			//
+			// Console.WriteLine($"Welcome Leaderboard (+{monthJoins}/-{monthLeaves})");
+			// var welcomers = welcomes.OrderByDescending(pair => pair.Value).ToArray();
+			// var aboveMedian = welcomers[..(welcomers.Length / 2)];
+			// var belowMedian = welcomers[(welcomers.Length / 2)..];
+			//
+			// Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
+			// Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
+			// Console.WriteLine("------------------");
+			// Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>: {pair.Value}").OrderBy(arg => arg))}");
+			// Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>: {pair.Value}").OrderBy(arg => arg))}");
 		}
 	}
 }

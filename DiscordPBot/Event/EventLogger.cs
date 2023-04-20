@@ -195,6 +195,12 @@ namespace DiscordPBot.Event
 						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<IntegerEvent>(br)));
 						break;
 					}
+					case EventId.SyncProjectDownloads:
+					case EventId.SyncProjectFollowers:
+					{
+						events.Add(new LoggedEvent(eventId, timestamp, ReadStruct<IntegerUInt64KeyEvent>(br)));
+						break;
+					}
 					case EventId.MemberMentioned:
 					case EventId.ChannelMentioned:
 					case EventId.RoleMentioned:
