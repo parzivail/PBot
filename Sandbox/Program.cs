@@ -108,7 +108,9 @@ namespace Sandbox
 			var monthLeaves = 0;
 			var oneMonthAgo = DateTime.UtcNow - TimeSpan.FromDays(30);
 
-			var diamondWelcomeValue = 5;
+			const ulong parziId = 135836100198531073;
+			const ulong sindId = 209426314942218240;
+			var diamondWelcomeValue = 6;
 
 			var timeStep = TimeSpan.FromDays(1);
 			var cursor = firstEvent;
@@ -235,35 +237,37 @@ namespace Sandbox
 				}
 
 				// Log member count
-				if (timestamp > cursor + timeStep)
-				{
-					Console.WriteLine($"{cursor},{stepJoins},{stepLeaves},{memberCount}");
-					stepJoins = 0;
-					stepLeaves = 0;
-					cursor += timeStep;
-				}
+				// if (timestamp > cursor + timeStep)
+				// {
+				// 	Console.WriteLine($"{cursor},{stepJoins},{stepLeaves},{memberCount}");
+				// 	stepJoins = 0;
+				// 	stepLeaves = 0;
+				// 	cursor += timeStep;
+				// }
 			
 				// Print each entry to the console
 				// Console.WriteLine(sb.ToString());
 			}
 
-			// Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
-			// Console.WriteLine($"Total reactions: {reactionCount} (+{reAdd}, -{reRem})");
-			// Console.WriteLine($"Total diamonds: {diamondCount}");
-			// Console.WriteLine($"Total messages: {messageCount}");
-			//
-			// Console.WriteLine();
-			//
-			// Console.WriteLine($"Welcome Leaderboard (+{monthJoins}/-{monthLeaves})");
-			// var welcomers = welcomes.OrderByDescending(pair => pair.Value).ToArray();
-			// var aboveMedian = welcomers[..(welcomers.Length / 2)];
-			// var belowMedian = welcomers[(welcomers.Length / 2)..];
-			//
-			// Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
-			// Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
-			// Console.WriteLine("------------------");
-			// Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>: {pair.Value}").OrderBy(arg => arg))}");
-			// Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>: {pair.Value}").OrderBy(arg => arg))}");
+			Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
+			Console.WriteLine($"Total reactions: {reactionCount} (+{reAdd}, -{reRem})");
+			Console.WriteLine($"Total diamonds: {diamondCount}");
+			Console.WriteLine($"Total messages: {messageCount}");
+			
+			Console.WriteLine();
+			
+			Console.WriteLine($"Welcome Leaderboard (+{monthJoins}/-{monthLeaves})");
+			var welcomers = welcomes.Where(pair => pair.Value > 5 && pair.Key != parziId && pair.Key != sindId).OrderByDescending(pair => pair.Value).ToArray();
+			var values = welcomers.Select(pair => pair.Value).Distinct().OrderByDescending(i => i).ToArray();
+			var aboveMedianValues = new HashSet<int>(values[..(values.Length / 2)]);
+			var aboveMedian = welcomers.Where(pair => aboveMedianValues.Contains(pair.Value)).ToArray();
+			var belowMedian = welcomers.Where(pair => !aboveMedianValues.Contains(pair.Value)).ToArray();
+			
+			Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
+			Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
+			Console.WriteLine("------------------");
+			Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>: {pair.Value}").OrderBy(arg => arg))}");
+			Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>: {pair.Value}").OrderBy(arg => arg))}");
 		}
 	}
 }
