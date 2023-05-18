@@ -110,7 +110,8 @@ namespace Sandbox
 
 			const ulong parziId = 135836100198531073;
 			const ulong sindId = 209426314942218240;
-			var diamondWelcomeValue = 6;
+			const int minumumAcolyteValue = 5;
+			const int diamondWelcomeValue = 6;
 
 			var timeStep = TimeSpan.FromDays(1);
 			var cursor = firstEvent;
@@ -257,11 +258,11 @@ namespace Sandbox
 			Console.WriteLine();
 			
 			Console.WriteLine($"Welcome Leaderboard (+{monthJoins}/-{monthLeaves})");
-			var welcomers = welcomes.Where(pair => pair.Value > 5 && pair.Key != parziId && pair.Key != sindId).OrderByDescending(pair => pair.Value).ToArray();
-			var values = welcomers.Select(pair => pair.Value).Distinct().OrderByDescending(i => i).ToArray();
+			var welcomers = welcomes.Where(pair => pair.Key != parziId && pair.Key != sindId).OrderByDescending(pair => pair.Value).ToArray();
+			var values = welcomers.Where(pair => pair.Value > minumumAcolyteValue).Select(pair => pair.Value).Distinct().OrderByDescending(i => i).ToArray();
 			var aboveMedianValues = new HashSet<int>(values[..(values.Length / 2)]);
 			var aboveMedian = welcomers.Where(pair => aboveMedianValues.Contains(pair.Value)).ToArray();
-			var belowMedian = welcomers.Where(pair => !aboveMedianValues.Contains(pair.Value)).ToArray();
+			var belowMedian = welcomers.Where(pair => !aboveMedianValues.Contains(pair.Value) || pair.Value <= minumumAcolyteValue).ToArray();
 			
 			Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
 			Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
