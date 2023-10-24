@@ -92,7 +92,10 @@ namespace Sandbox
 			var joins = 0;
 			var leaves = 0;
 
-			var data = EventLogger.Read(@"E:\colby\Desktop\temp\log.bin");
+			var data = EventLogger.Read(@"E:\colby\Desktop\temp\log_v2.bin");
+
+			// using var outFs = File.Open(@"E:\colby\Desktop\temp\log.txt", FileMode.Append);
+			// using var logSw = new StreamWriter(outFs);
 
 			var sb = new StringBuilder();
 
@@ -124,8 +127,8 @@ namespace Sandbox
 
 				sb.Append($"{timestamp.ToLocalTime():MM/dd/yyyy hh:mm:ss.ffff tt}")
 					.Append(' ')
-					.Append($"+{(timestamp - firstEvent):G}")
-					.Append(' ')
+					// .Append($"+{(timestamp - firstEvent):G}")
+					// .Append(' ')
 					.Append(id.ToString().PadRight(20));
 
 				if (payload is IIntegerEvent intEvent)
@@ -145,6 +148,9 @@ namespace Sandbox
 
 				if (payload is IMentionEvent mention)
 					sb.Append($" Mention=[{mention.MentionType}: {mention.MentionId}]");
+
+				if (payload is IUInt64KeyEvent keyEvent)
+					sb.Append($" Key={keyEvent.Key}");
 
 				if (payload is IEmojiEvent emojiEvent)
 				{
@@ -248,6 +254,8 @@ namespace Sandbox
 			
 				// Print each entry to the console
 				// Console.WriteLine(sb.ToString());
+				
+				// logSw.WriteLine(sb.ToString());
 			}
 
 			Console.WriteLine($"Total members: {memberCount} (+{joins}, -{leaves})");
