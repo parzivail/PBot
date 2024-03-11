@@ -92,7 +92,7 @@ namespace Sandbox
 			var joins = 0;
 			var leaves = 0;
 
-			var data = EventLogger.Read(@"E:\colby\Desktop\temp\log_v2.bin");
+			var data = EventLogger.Read(@"C:\Users\cnewman\Desktop\temp\log.bin");
 
 			// using var outFs = File.Open(@"E:\colby\Desktop\temp\log.txt", FileMode.Append);
 			// using var logSw = new StreamWriter(outFs);
@@ -272,8 +272,8 @@ namespace Sandbox
 			var aboveMedian = welcomers.Where(pair => aboveMedianValues.Contains(pair.Value)).ToArray();
 			var belowMedian = welcomers.Where(pair => !aboveMedianValues.Contains(pair.Value) || pair.Value <= minumumAcolyteValue).ToArray();
 			
-			Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
-			Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
+			Console.WriteLine($"Thank you to this month's acolytes! {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
+			Console.WriteLine($"And thanks to those who are keeping the server welcoming! {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>").OrderBy(arg => arg))}");
 			Console.WriteLine("------------------");
 			Console.WriteLine($"Acolyte: {string.Join(", ", aboveMedian.Select(pair => $"<@!{pair.Key}>: {pair.Value}").OrderBy(arg => arg))}");
 			Console.WriteLine($"Thanks: {string.Join(", ", belowMedian.Select(pair => $"<@!{pair.Key}>: {pair.Value}").OrderBy(arg => arg))}");
