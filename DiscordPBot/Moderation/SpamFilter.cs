@@ -16,7 +16,6 @@ public class SpamFilter
 	private static readonly HashSet<TimedMessage> RecentMessages = [];
 
 	public static async Task ProcessMessage(MessageCreateEventArgs e)
-	
 	{
 		RefreshCache();
 
