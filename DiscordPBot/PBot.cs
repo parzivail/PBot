@@ -10,6 +10,7 @@ using System.Xml;
 using BitLog;
 using DiscordPBot.Event;
 using DiscordPBot.Model;
+using DiscordPBot.Moderation;
 using DiscordPBot.Modrinth;
 using DotNetEnv;
 using DSharpPlus;
@@ -30,7 +31,7 @@ namespace DiscordPBot
 
 	internal static class PBot
 	{
-		private const bool Production = true;
+		private const bool Production = false;
 
 		private static string _appName = "PBot";
 
@@ -544,7 +545,7 @@ namespace DiscordPBot
 			return $"<#{channelId}>";
 		}
 
-		private static async void SendToManagement(DiscordMessageBuilder message)
+		internal static async void SendToManagement(DiscordMessageBuilder message)
 		{
 			var managementChannel = await GetManagementChannel();
 			await message.SendAsync(managementChannel);
@@ -571,6 +572,8 @@ namespace DiscordPBot
 		{
 			if (e.Author.IsBot)
 				return;
+
+			await SpamFilter.ProcessMessage(e);
 		}
 	}
 
