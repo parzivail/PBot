@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ConcurrentCollections;
 using DSharpPlus.Entities;
 using DSharpPlus.EventArgs;
 
@@ -13,11 +14,11 @@ public class SpamFilter
 
 	private static readonly TimeSpan TimeoutTimespan = TimeSpan.FromMinutes(10);
 	private static readonly TimeSpan ThresholdTimespan = TimeSpan.FromSeconds(5);
-	private static readonly HashSet<TimedMessage> RecentMessages = [];
+	private static readonly ConcurrentHashSet<TimedMessage> RecentMessages = [];
 
 	public static async Task ProcessMessage(MessageCreateEventArgs e)
 	{
-		RefreshCache();
+		RemoveStaleMessages();
 
 		var message = new TimedMessage(DateTime.UtcNow, e.Author.Id, e.Channel.Id, e.Message.Id, e.Message.Content.GetHashCode());
 		RecentMessages.Add(message);
@@ -55,10 +56,16 @@ public class SpamFilter
 	/// <summary>
 	/// Remove messages older than twice the moderation threshold
 	/// </summary>
-	private static void RefreshCache()
+	private static void RemoveStaleMessages()
 	{
 		var now = DateTime.UtcNow;
-		RecentMessages.RemoveWhere(message => Math.Abs((now - message.Timestamp).TotalSeconds) > 2 * ThresholdTimespan.TotalSeconds);
+		
+		var staleMessages = RecentMessages
+			.Where(message => Math.Abs((now - message.Timestamp).TotalSeconds) > 2 * ThresholdTimespan.TotalSeconds)
+			.ToList();
+
+		foreach (var message in staleMessages)
+			RecentMessages.TryRemove(message);
 	}
 
 	/// <summary>
